@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html style="height:100%;">
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+		<script type="text/javascript" src="code/utils.js"></script>
+		<script type="text/javascript" src="code/main.js"></script>
+		<script type="text/javascript" src="code/menu.js"></script>
+		<script type="text/javascript" src="code/diagram.js"></script>
+		<script type="text/javascript" src="code/sampleproject.js"></script>
+		<script type="text/javascript" src="code/compile.js"></script>
+		<script type="text/javascript" src="code/grammar.js"></script>
+		<script type="text/javascript" src="code/analyze.js"></script>
+		<script type="text/javascript" src="code/worker.js"></script>
+	</head>
+	<body id="body" style="height:100%;margin:0px;font-family:sans-serif;font-size:small;white-space:nowrap;cursor:default;-webkit-touch-callout:none;-webkit-user-select:none;-moz-user-select:none;-ms-user-select:none;user-select:none;" unselectable="on" spellcheck="false" onload="window.main = (setup_main)(); main.load();" onresize="main.shouldResize = true; main.requestUpdate();">
+		<div style="height:100%;">
+			<table cellspacing="0" cellpadding="0" border="0" style="width:100%;height:100%;">
+				<tr>
+					<td style="width:100%;background-color:#ddd;">
+						<table cellspacing="0" cellpadding="0" border="0">
+							<tr>
+								<td style="width:100%;">
+									<table cellspacing="0" cellpadding="0" border="0">
+										<tr id="menu1"></tr>
+									</table>
+								</td>
+								<td id="browser" style="padding-left:1em;padding-right:1em;font-size:smaller;"></td>
+							</tr>
+						</table>
+					</td>
+				</tr>
+				</tr>
+				<tr>
+					<td style="height:1px;min-height:1px;background-color:#666;"></td>
+				</tr>
+				<tr>
+					<td style="width:100%;background-color:#ddd;">
+						<table cellspacing="0" cellpadding="0" border="0">
+							<tr>
+								<td style="width:100%;">
+									<table cellspacing="0" cellpadding="0" border="0">
+										<tr id="menu2"></tr>
+									</table>
+								</td>
+							</tr>
+						</table>
+					</td>
+				</tr>
+				<tr>
+					<td style="height:100%;">
+						<div id="content" style="height:100%;">
+							<table cellspacing="0" cellpadding="0" border="0" style="width:100%;height:100%;">
+								<tr>
+									<td style="width:5px;min-width:5px;background-color:#ddd;"></td>
+									<td style="outline:1px solid #666;">
+										<div id="left" style="height:100%;overflow:auto;background-color:#ddd;"></div>
+									</td>
+									<td style="width:5px;min-width:5px;background-color:#ddd;cursor:ew-resize;" onmousedown="main.isResizing = 'left';"></td>
+									<td id="right">
+										<table cellspacing="0" cellpadding="0" border="0" style="width:100%;height:100%;">
+											<tr>
+												<td style="outline:1px solid #666;">
+													<div id="edit" style="height:100%;overflow:scroll;overflow-x:auto;"></div>
+												</td>
+											</tr>
+											<tr>
+												<td style="height:5px;min-height:5px;background-color:#ddd;cursor:ns-resize;" onmousedown="main.isResizing = 'output';"></td>
+											</tr>
+											<tr>
+												<td style="outline:1px solid #666;">
+													<div id="output" style="height:100%;overflow:scroll;overflow-x:auto;"></div>
+												</td>
+											</tr>
+										</table>
+									</td>
+									<td style="width:5px;min-width:5px;background-color:#ddd;"></td>
+								</tr>
+							</table>
+						</div>
+					</td>
+				</tr>
+				<tr>
+					<td style="height:15px;background-color:#ddd;"></td>
+				</tr>
+			</table>
+		</div>
+		<div id="frame" style="display:none;">
+			<iframe id="left_keys" src="panel/left_keys.htm"></iframe>
+			<iframe id="left_loadedprojects" src="panel/left_loadedprojects.htm"></iframe>
+			<iframe id="left_currentproject" src="panel/left_currentproject.htm"></iframe>
+			<iframe id="left_tabs" src="panel/left_tabs.htm"></iframe>
+			<iframe id="left_structure" src="panel/left_structure.htm"></iframe>
+			<iframe id="left_properties" src="panel/left_properties.htm"></iframe>
+			<iframe id="left_variants" src="panel/left_variants.htm"></iframe>
+			<iframe id="left_history" src="panel/left_history.htm"></iframe>
+			<iframe id="left_search" src="panel/left_search.htm"></iframe>
+			<iframe id="left_execute" src="panel/left_execute.htm"></iframe>
+			<iframe id="left_inspect" src="panel/left_inspect.htm"></iframe>
+			<iframe id="left_state" src="panel/left_state.htm"></iframe>
+			<iframe id="edit_code" src="panel/edit_code.htm"></iframe>
+			<iframe id="edit_config" src="panel/edit_config.htm"></iframe>
+			<iframe id="edit_codediagram" src="panel/edit_codediagram.htm"></iframe>
+			<iframe id="edit_data" src="panel/edit_data.htm"></iframe>
+			<iframe id="edit_dependencies" src="panel/edit_dependencies.htm"></iframe>
+			<iframe id="edit_scopes" src="panel/edit_scopes.htm"></iframe>
+			<iframe id="edit_states" src="panel/edit_states.htm"></iframe>
+			<iframe id="edit_flowchart" src="panel/edit_flowchart.htm"></iframe>
+			<iframe id="edit_controlpath" src="panel/edit_controlpath.htm"></iframe>
+			<iframe id="edit_behavior" src="panel/edit_behavior.htm"></iframe>
+			<iframe id="edit_dataflow" src="panel/edit_dataflow.htm"></iframe>
+			<iframe id="edit_valuerange" src="panel/edit_valuerange.htm"></iframe>
+		</div>
+	</body>
+</html>

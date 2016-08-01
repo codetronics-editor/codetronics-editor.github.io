@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html style="height:100%;">
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+</head>
+<body style="margin:0px;margin-left:4em;margin-right:4em;white-space:pre-wrap;">
+
+<h1>Beschreibung der semantischen Entwicklungsumgebung für Javascript</h1>
+
+Die semantische Entwicklungsumgebung für Javascript ist eine Anwendung für den Browser, die die Vorzüge der semantischen Programmierung aufzeigen soll. Die Anwendung selbst ist vollständig in Javascript implementiert und sollte in allen aktuellen Browserversion lauffähig sein.
+
+Es werden die LocalStore-API für Persistenz, die WebWorker-API für Hintergrundaktivitäten, ContentEditable für die Editor-Komponente sowie SVG für grafische Elemente verwendet. Alle Eingaben werden automatisch im LocalStore des Browsers gespeichert und beim erneuten Aufruf der HTML-Seite wiederhergestellt. Zusätzlich besteht die Möglichkeit Projekte im JSON-Format auf der Festplatte zu speichern, bzw. von dieser zu laden.
+
+Der eingebaute Übersetzer zeichnet sich aus durch die partielle Übersetzung der Eingabe im Editor. Das bedeutet, dass nur der geänderte Teil des Quellcodes neu übersetzt wird und das restliche Programm unverändert bleibt. Die hieraus entstehenden Vorteile sind essentiell für die Idee der semantischen Programmierung und werden später ausführlich behandelt.
+
+Darüber hinaus werden diverse Auswertungen zum verwalteten Programm erstellt.
+
+<h2>Warum partielle Übersetzung?</h2>
+
+Beim Bearbeiten des Quellcodes wird nur der geänderte Teil neu ausgewertet. Schlägt die Auswertung fehl, z.B. weil ein Syntaxfehler vorliegt, lässt sich der restliche Code trotzdem weiter ausführen. Damit 
+
+
+<h1>Zusätzliche Information im Quellcode</h1>
+
+Der Quellcode enthält zusätzliche Informationen, die im Editor zunächst nicht eingeblendet werden. Der Editor zeigt den Syntaxbaum in seiner textuellen Repräsentation. Für jeden Knoten wird ein zusätzliches verstecktes Element eingefügt, das die Konfiguration des Knotens enthält. Die Eigenschaften des Knotens bleiben also erhalten, wenn die textuelle Repräsentation bearbeitet wird. Außerdem enthält jeder Knoten eindeutigen Identifizierer, damit Verschiebungen an eine andere Stelle erkannt werden.
+
+Bei der Fehlersuche werden oft temporäre Änderungen am Quellcode durchgeführt. Um diese Änderungen später wieder restlos entfernen zu können werden sie als temporär markiert.
+
+
+<h1>Der Übersetzungsvorgang</h1>
+
+Wird der Quellcode im Editor bearbeitet, beginnt der Compiler im Hintergrund mit der Auswertung. Zunächst wird der geänderte Bereich eingegrenzt. Der Syntaxbaum wird in seiner textuellen Repräsentation A betrachtet, wie er im Editor dargestellt wird. Von beiden Seiten wird diese mit der geänderten textuellen Repräsentation B aus dem Editor verglichen. Der Bereich, in dem sich beide Repräsentationen unterscheiden ist der geänderte Bereich. Dieser wird auf den nächstgrößeren Knoten im Syntaxbaum erweitert, so dass die Änderung vollständig innerhalb dieses Knotens liegt. Dies ist der geänderte Knoten.
+
+Für alle Kindknoten des geänderten Knotens wird nun geprüft, ob deren textuelle Repräsentation noch unverändert vorliegt. Diese Kindknoten wurden nicht geändert und gelten weiterhin als kompiliert. Alle Vorfahrknoten des geänderten Knotens auf dem Pfad zum Wurzelknoten des sichtbaren Syntaxbaums werden ebenfalls als geändert betrachtet. Das ist notwendig, da das Einfügen von Gruppierungszeichen die übergeordnete Struktur des Syntaxbaums verändern kann. Schlägt die Auswertung fehl, bleibt allerdings nur der geänderte Knoten unkompiliert zurück, so dass der restliche Code weiterhin intakt bleibt. Knoten mit unkompilierten Nachfahrknoten werden als partiell kompiliert bezeichnet.
+
+
+<i>Werden kurz nacheinander an mehreren Stellen Änderungen durchgeführt, ist der erkannte Bereich möglicherweise größer als nötig. Nach erfolgreicher Übersetzung ist das Ergebnis identisch. Schlägt die Auswertung allerdings fehl, ist der zurückbleibende unkompilierte Bereich größer als nötig.</i>
+
+----
+
+The parser implements a subset of the ECMAScript® Language Specification ECMA-262 5.1 Edition.
+
+Constraints:
+
+Does not support comments
+Does not support pattern (regular expression) literals
+Does not support line continuation, escaping only within string literals
+Only supports a subset of number literals
+Only supports a subset of syntax elements
+
+Additions:
+
+Every syntax element is optionally annotated with a configuration object (JSON map), containing the properties of the corresponding node in the parse tree and its unique identifier.
+
+A simple bottom-up LL-parser is used. The grammar specifies tokenization (lexical analysis), parsing (syntax analysis), parse tree generation (semantic analysis) and formatting of textual representation at the same time. All production rules directly represent one in the parse tree and vice versa. The contained variables in a production rule are named. These names are used to access child nodes in the parse tree. Operator precedence is achieved by specifying priority groups.
+
+
+
+The parser tokenizes from left to right, does not support comments, regexp literal or line continuation
+uses simplified character ranges, only supports a
+
+
+		tokenizing:
+		punctuator  as specified, supports multi-character operators
+		identifier  all characters minus punctuator characters
+		string      all characters within (unescaped) double or single quotes, leaves escaping as-is
+		number      numeric literals in various notations
+		"c"         list of unicode ranges
+		"*"         optionally matches one or more repetitions
+		"+"         matches at least one or more repetitions
+		"|"         list of variants, applied in the specified order
+		
+		tokenizes from left to right, does not support comments, regexp literal or line continuation
+		uses simplified character ranges, only supports a subset of javascript number literals
+		
+		parsing:
+		"p"  applies production rule
+		"t"  matches terminal token
+		"g"  matches terminal group
+		"?"  optionally matches the specified pattern
+		"*"  optionally matches one or more repetitions
+		"+"  matches at least one or more repetitions
+		"|"  matches any of the variants
+		
+		production rules are applied bottom-up in the specified order for correct operator precedence
+		
+		printing:
+		" "  prints space character (0x0020)
+		"n"  prints new line (0x000A)
+		"i"  configures subsequent indentation depth (0x0009)
+		
+		prints all characters as specified in grammar and given syntax tree.
+
+
+		why partial compilation?
+		execute partial compiled code, unparsed parts will be skipped
+		directly detects type of changes, used for live update of program state
+		shows scope of change and influence to other parts of the code
+		this also makes it possible for more people to work on same code
+		tracks move of nodes and type of change in history
+		
+		
+		
+		
+		group 
+		
+		
+		
+		detect altered subtree
+		
+		this is the altered subtree or altered node.
+		
+		recursively search in the altered node for unaltered descendants
+		
+		before:   ( ( ) (  ( ) (  ) )  )
+		altered:  ( ( ) ( XXX) (  ) )  )
+		          ----->             <--
+		subtree:  ( ( ) XXXXXXXXXXXXX  )
+		                       <-->
+		keep:     ( ( ) XXXXXXX(  )XX  )
+		
+		result: syntax-string of altered node containing compiled tokens
+		
+		
+		step X.
+		
+		now mark all altered nodes and its visible ancestors as uncompiled
+		also recompile all siblings and child nodes with precedence
+		keep annotations with tokens for exact reconstruction and correction
+		
+		compiled nodes can not be restructured externally, editing affects only altered node and path up
+		
+		result: (uncompiled)? ( (compiled) (uncompiled) )* (compiled)?
+		
+		
+		      U        *  altered node, recompile current node and path up
+		     / \       C  compiled with no uncompiled descendants
+		    /   \      U  unparsed, possibly containing compiled tokens
+		   /     \
+		  U*      C
+		 / \     / \
+		C   C   C   C
+		
+		after successful compilation all nodes are compiled, otherwise leave path up compiled as before
+		
+		result: ( (compiled) | (uncompiled) | (partially-compiled) )
+		for the three cases: success, altered or previously uncompiled root, altered descendant
+		
+		      P        C  compiled with no uncompiled descendants
+		     / \       U  unparsed, possibly containing compiled tokens
+		    /   \      P  partially-compiled containing uncompiled descendants
+		   /     \
+		  U       C
+		 / \     / \
+		C   C   C   C
+
+
+
+<h1>Die Abhängigkeitmatrix</h1>
+
+Für alle Bereiche des Programms werden deren Beziehungen zu anderen Bereichen des Programms mit der gewählten Auflösung in einer Matrix dargestellt. Das betrifft den Zugriff auf Daten eines anderen Bereichs und den Aufruf von Funktionen. 
+
+Abgeschlossene Teile des Programms identifiziert werden. Das sind diejenigen Bereiche, die nur über den Aufruf 
+
+Außerdem können die Seiteneffekte identifiziert werden
+
+Schnittstelle
+
+
+
+Zustand speichern
+
+
+
+<h1>Das Kontrollflussdiagramm</h1>
+
+Die Analyse des Kontrollflusses ist allerdings nicht exakt, da nicht 
+
+Alle Angaben im Kontrollflussdiagramm sind entweder gewiss oder ungewiss. Das heißt, ein Fall ist entweder mit Gewissheit unmöglich, wird also nie eintreten, bzw. mit Gewissheit möglich, dann gibt es Eingabewerte, die diesen Fall erzeugen. Ist eine Angabe ungewiss, dann kann nicht bestimmt werden, ob der Fall eintreten kann oder nicht. Soll das Eintreten garantiert werden, wie etwa die Echtzeitfähigkeit, ist also mit falsch-negativen Ergebnissen zu rechnen. Soll im umgekehrten Fall das Eintreten ausgeschlossen werden, wie etwa das Auftreten von Fehlern, ist also mit falsch-positiven Ergebnissen zu rechnen.
+
+unabhängige Kontrollpfade können parallelisiert werden.
+
+<h1>Das Datenflussdiagramm</h1>
+
+Im Datenflussdiagramm werden alle Eingangsvariablen am oberen Rand, alle Ausgangsvariablen am unteren Rand und alle Zwischenwerte im Bereich dazwischen dargestellt. Eingangsvariablen sind diejenigen Variablen mit konstantem Wert (eigentlich Eingangskonstanten) bzw. Parameter im Einsprungspunkt. Parameter im Einsprungspunkt können mit symbolischen Wertebereichen belegt werden, so dass der Datenfluss für unbestimmte Eingabewerte analysiert wird. Ausgangsvariablen sind diejenigen Variablen, deren Wert im Programm nicht verwendet wird, bzw. die als Ergebnis des Programms ausgegeben werden. Alle anderen Variablen . Es kann sowohl vorkommen, dass Eingangsvariablen im Programmverlauf geändert, als auch Ausgangsvariablen weiter verwendet werden. Die Analyse bezieht sich daher nicht auf eine Variable als solche, sondern nur deren Verwendung. Deshalb ist es möglich, dass die selbe Variable als Zwischenwert mehrfach vorkommt.
+
+Es gibt nur Kanten von oben nach unten. Hängt ein Zwischenwert (indirekt) von seinem Ergebnis ab, werden nur die externen Kanten des Zyklus' betrachtet.
+
+Die Analyse des Datenflusses hängt von der Analyse des Kontrollflusses ab, da unterschiedliche Kontrollpfade auch unterschiedliche Datenflüsse haben können. Die Analyse des Kontrollflusses ist allerdings nicht exakt, somit sind auch alle Angaben im Datenflussdiagramm entweder gewiss oder ungewiss. Für manche ungewisse Angaben kann ein Wertebereich angegeben werden.
+
+</body>
+</html>
