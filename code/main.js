@@ -48,6 +48,7 @@ function setup_main() {
 			"menu1": null,
 			"menu2": null,
 			"browser": null,
+			"updating": null,
 			"content": null,
 			"left": null,
 			"right": null,
@@ -66,6 +67,7 @@ function setup_main() {
 		session: {
 			current: null,
 			visibleRoot: null,
+			resetTab: null,
 			compile: null,
 			analyze: null,
 		},
@@ -89,6 +91,8 @@ function setup_main() {
 		},
 		agent: "unknown",
 		worker: null,
+		workerMessage: null,
+		currentPanel: {},
 		
 		hasLoaded: false,
 		updateCtr: 0,
@@ -154,9 +158,8 @@ function setup_main() {
 					main.node.browser.innerHTML = "ALTEN INTERNET EXPLORER ERKANNT:&emsp;<span style=\"color:red;\">NICHT GETESTET</span>";
 				break;
 			}
-		
-			if(localStorage.storage)
-				main.storage = JSON.parse(localStorage.storage);
+			
+			try {main.storage = JSON.parse(localStorage.getItem("storage")) || main.storage;} catch(ex) {}
 			
 			if(!main.storage.left.size)
 				main.storage.left.size = main.node.content.clientWidth / 4;
@@ -169,7 +172,7 @@ function setup_main() {
 				break;
 			}
 			if(!hasProject) {
-				main.storage.restore.current = main.addProject();
+				main.storage.restore.current = main.addProject(); //// hello world
 			}
 			
 			main.setMenu(main.storage.menu);
@@ -236,7 +239,7 @@ function setup_main() {
 			main.node[dest].parentNode.style.height = main.node[dest].parentNode.style.maxHeight = h;
 		},
 		listEntry: function(content,style,onclick) {
-			return "<td style=\"" + (style || "") + "\"" + ((onclick) ? " onmousedown=\"style.backgroundColor = '#bbb';\" onmouseup=\"style.backgroundColor = null;\" onmouseout=\"onmouseup();\" onclick=\"" + onclick + "\"" : "") + ">&ensp;" + content + "&ensp;</td>";
+			return "<td style=\"" + (style || "") + "\"" + ((onclick) ? " onmouseover=\"style.backgroundColor = '#24c';\" onmouseout=\"style.backgroundColor = null;\" onclick=\"style.backgroundColor = null; " + onclick + "\"" : "") + ">&ensp;" + content + "&ensp;</td>";
 		},
 		setMenu: function(key1) {
 			main.storage.menu = key1;
@@ -252,15 +255,17 @@ function setup_main() {
 			main.node.menu2.innerHTML = html2;
 		},
 		setPanel: function(dest,panel) {
+			main.storage[dest].panel = panel;
+			
 			if(panel && !main.session.current && !main.noproject[panel])
 				panel = (dest == "left") ? "left_loadedprojects" : null;
 			if(panel && !main.session.visibleRoot && !main.notab[panel])
 				panel = (dest == "left") ? "left_tabs" : null;
 				
-			if(main.hasLoaded && main.storage[dest].panel == panel)
+			if(main.currentPanel[dest] == panel)
 				return;
 			
-			main.storage[dest].panel = panel;
+			main.currentPanel[dest] = panel;
 			main.node[dest].innerHTML = "";
 			
 			if(panel)
@@ -288,7 +293,7 @@ function setup_main() {
 				projectNode: projectNode,  // all created nodes so far
 				nextId: [2],  // big integer
 				tab: [{
-					htmlpath: "////",
+					htmlpath: "////",  //// moved ?
 					visibleRoot: [1].join("_"),
 					select: null,
 				}],
@@ -307,7 +312,7 @@ function setup_main() {
 		},
 		addSampleProject: function(name1) {
 			var name3 = addProject(name1);
-			main.storage.project[name3] = JSON.parse(JSON.stringify(sampleproject[name1])); ////
+			main.storage.project[name3] = utils.clone(sampleproject[name1]); ////
 			main.storage.project[name3].name = name3;
 			
 			return name3;
@@ -364,7 +369,17 @@ function setup_main() {
 			
 			main.setPanel("left",main.storage.left.panel);
 			main.setPanel("edit",main.storage.edit.panel);
-			main.resetCompiler();
+			
+			if(!main.session.resetTab
+			|| main.session.resetTab.current != main.session.current
+			|| main.session.resetTab.visibleRoot != main.session.visibleRoot) {
+				main.session.resetTab = {
+					current: main.session.current,
+					visibleRoot: main.session.visibleRoot,
+				};
+				
+				main.resetCompiler();
+			}
 		},
 		resetCompiler: function() {
 			main.session.compile = {
@@ -373,7 +388,7 @@ function setup_main() {
 				inputSelect: null, // offset in inputText
 				outputFormat: null, // output html format definitions
 				outputSelect: null, // index and offset in outputFormat
-				outputHtml: null, // output html-encoded editor content (detect change)
+				outputText: null, // output html-decoded editor content (detect change)
 				outputGroups: [], // output group ranges for html-decoded editor content (detect changed range)
 			};
 			main.session.analyze = {
@@ -385,9 +400,10 @@ function setup_main() {
 			if(!main.hasLoaded)
 				return;
 			
-			main.updateCtr = (main.updateCtr + 1) % Number.MAX_SAFE_INTEGER;
+			main.node.updating.innerHTML = "&ensp;◷&ensp;";
 			
-			var queue = utils.initInterruptable(function(updateCtr) {console.log("A " + updateCtr + " " + main.updateCtr + " " + (updateCtr == main.updateCtr));
+			main.updateCtr = (main.updateCtr + 1) % Number.MAX_SAFE_INTEGER;
+			var queue = utils.initInterruptable(function(updateCtr) {//console.log("A " + updateCtr + " " + main.updateCtr + " " + (updateCtr == main.updateCtr));
 				return updateCtr == main.updateCtr;
 			},main.updateCtr);
 			
@@ -398,10 +414,9 @@ function setup_main() {
 			utils.runInterruptable(queue);
 		},
 		workerMessage: function(ev) {
-			main.session.compile = ev.data[0].compile;
-			main.session.analyze = ev.data[0].analyze;
+			main.workerMessage = ev.data[0];
 			
-			var queue = utils.initInterruptable(function(updateCtr) {console.log("C " + updateCtr + " " + main.updateCtr + " " + (updateCtr == main.updateCtr));
+			var queue = utils.initInterruptable(function(updateCtr) {//console.log("C " + updateCtr + " " + main.updateCtr + " " + (updateCtr == main.updateCtr));
 				return updateCtr == main.updateCtr;
 			},ev.data[1]);
 			
@@ -413,6 +428,7 @@ function setup_main() {
 			utils.queueInterruptable(queue,function(queue) {
 				main.shouldResize = false;
 				main.shouldCompile = false;
+				main.node.updating.innerHTML = "";
 			});
 			
 			utils.runInterruptable(queue);
@@ -451,6 +467,11 @@ function setup_main() {
 			main.session.analyze.shouldUpdate = false;
 			if(!main.shouldCompile) // update only if editor content changed
 				return;
+			
+			
+			//// todo analyze (structure) without parse on setProject
+			//// todo print (editor content) without parse on setTab
+			
 			
 			main.session.compile.shouldUpdate = true;
 			main.session.analyze.shouldUpdate = true;
@@ -507,9 +528,21 @@ function setup_main() {
 			if(!main.shouldCompile) // update only if editor content changed
 				return;
 			
-			return;
 			
 			main.storage.edit.select = null;
+			
+			
+			
+			main.session.current.name = main.workerMessage.current.name;
+			main.session.current.projectRoot = main.workerMessage.current.projectRoot; //// unparsed in root ???
+			main.session.current.projectNode = main.workerMessage.current.projectNode;
+			main.session.current.nextId = main.workerMessage.current.nextId;
+			main.session.compile = main.workerMessage.compile;
+			main.session.analyze = main.workerMessage.analyze;
+			
+			
+			return;
+			
 			
 			// add html, encode entities
 			main.node.code.innerHTML = "";
@@ -546,6 +579,12 @@ function setup_main() {
 				main.node.code.appendChild(node1);
 			}
 			
+			
+			// outputText & outputGroups
+			
+			
+			
+			
 			// range
 			
 			//// compare main.node.code.innerHTML and main.node.code.innerHTML
@@ -558,7 +597,7 @@ function setup_main() {
 			main.session.compile.outputHtml = main.node.code.innerHTML;
 		},
 		update3_updateEdit: function(queue) {
-			switch(main.storage.edit.panel) { // update only visible panel
+			switch(main.currentPanel.edit) { // update only visible panel
 			case "edit_code":console.log(111);
 				main.storage.edit.html = main.node.code.innerHTML;
 				main.update3_updateCode(queue);
@@ -639,35 +678,38 @@ function setup_main() {
 			
 		},
 		update3_updateLeft: function(queue) {
-			switch(main.storage.left.panel) { // update only visible panel
+			switch(main.currentPanel.left) { // update only visible panel
 			case "left_keys":
 				break;
 			case "left_loadedprojects":
 				var html = "";
 				utils.forMap(main.storage.project,function(val,key) {
 					html += "<tr>";
-					html += main.listEntry(utils.escapeHtml(key),"width:100%;padding-top:5px;padding-bottom:5px;","main.setProject('" + utils.escapeQuote(utils.escapeHtml(key)) + "'); main.setPanel('left','left_structure'); main.requestUpdate();");
-					html += main.listEntry("Entf.","width:0px;padding-top:5px;padding-bottom:5px;","main.removeProject('" + utils.escapeQuote(utils.escapeHtml(key)) + "'); main.requestUpdate();");
+					html += main.listEntry(utils.escapeHtml(key),"width:100%;padding-top:5px;padding-bottom:5px;","main.setProject(utils.unescapeHtml('" + utils.escapeQuote(utils.escapeHtml(key)) + "')); main.setPanel('left','left_structure'); main.requestUpdate();");
+					html += main.listEntry("Entf.","width:0px;padding-top:5px;padding-bottom:5px;","main.removeProject(utils.unescapeHtml('" + utils.escapeQuote(utils.escapeHtml(key)) + "')); main.requestUpdate();");
 					html += "</tr>";
-				});console.log(html);
+				});
 				if(!html) {
-					html += main.listEntry("","width:100%;padding-top:5px;padding-bottom:5px;");
+					html += "<tr>" + main.listEntry("","width:100%;padding-top:5px;padding-bottom:5px;") + "</tr>";
 				}
 				main.node.projects.innerHTML = html;
 				break;
 			case "left_currentproject":
 				main.node.currentname.innerHTML = utils.escapeHtml(main.session.current.name);
 				break;
-			case "left_tabs":
-				main.node.currenttab.innerHTML = (main.session.current.restore.tab)
+			case "left_tabs":console.log(main.session.current.restore.tab);
+				var tab = main.session.current.restore.tab;
+				main.node.currenttab.innerHTML = (main.session.current.tab[tab])
 					? main.session.current.tab[tab].htmlpath
 					: "Kein Tab ausgewählt";
 				if(main.session.current.tab.length) {
 					main.node.hastabs.innerHTML = "Geöffnete Tabs";
 					var html = "";
 					utils.forList(main.session.current.tab,function(val,i) {
+						html += "<tr>";
 						html += main.listEntry(val.htmlpath,"width:100%;padding-top:5px;padding-bottom:5px;","main.setTab(" + i + "); main.requestUpdate();");
 						html += main.listEntry("Entf.","width:0px;padding-top:5px;padding-bottom:5px;","main.removeTab(" + i + "); main.requestUpdate();");
+						html += "</tr>";
 					});
 					main.node.tabs.innerHTML = html;
 				}
@@ -677,18 +719,15 @@ function setup_main() {
 				}
 				break;
 			case "left_structure":
+				var html = "";
 				utils.forList(main.session.analyze.structure,function(val) {  //// indented html name, html path, id string
 					//// &shy; soft hyphens (wrap) and nowrap spans
-					main.node.innerHTML += "<tr>" + main.listEntry(val.htmlname,"","main.addTab(utils.unescapeHtml(utils.unescapeQuote('" + utils.escapeQuote(utils.escapeHtml(val.htmlpath)) + "')),'" + val.visibleRoot + "');") + "</tr>"; //// how to escape
+					html += "<tr>" + main.listEntry(val.htmlname,(val.visibleRoot) ? "" : "color:#666;",(val.visibleRoot) ? "main.addTab(utils.unescapeHtml('" + utils.escapeQuote(utils.escapeHtml(val.htmlpath)) + "'),'" + val.visibleRoot + "');" : null) + "</tr>"; //// how to escape
 				});
-				/*var queue = [[null,main.session.analyze.structure,0]];
-				for(var p = 0; p < queue.length; ++p) {
-					var key1 = queue[p][0];
-					var val1 = queue[p][1];
-					var indent = queue[p][2];
-					utils.forList(val1,function(val2,i) {
-					});
-				}*/
+				if(!html) {
+					html += "<tr>" + main.listEntry("","width:100%;padding-top:5px;padding-bottom:5px;") + "</tr>";
+				}
+				main.node.structure.innerHTML = html;
 				break;
 			case "left_properties":
 				break;
@@ -711,7 +750,7 @@ function setup_main() {
 			}
 		},
 		update3_store: function(queue) {
-			localStorage.storage = JSON.stringify(main.storage);
+			localStorage.setItem("storage",JSON.stringify(main.storage));
 		},
 	
 		//// browser test

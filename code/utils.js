@@ -1,5 +1,9 @@
 function setup_utils() {
 	return {
+		clone: function(val) { //// replace
+			return (val) ? JSON.parse(JSON.stringify(val)) : null;
+		},
+		
 		forUpto: function(count,func) {
 			for(var i = 0; i < count; ++i)
 				func(i);
@@ -57,9 +61,12 @@ function setup_utils() {
 			return (node.textContent || node.innerText);
 		},
 		escapeHtml: function(str) {
-			var node = document.createElement("div");
-			node.appendChild(document.createTextNode(str));
-			return node.innerHTML.replace(/"/g,"&quot;");
+			str = str.replace(/&/g,"&amp;");
+			str = str.replace(/</g,"&lt;");
+			str = str.replace(/>/g,"&gt;");
+			str = str.replace(/"/g,"&quot;");
+			str = str.replace(/'/g,"&#39;");
+			return str;
 		},
 		makeIdentifier: function(str) {
 			str = str.replace(/^[^\u0041-\u005A\u005F-\u005F\u0061-\u007A\u0080-\uFFFF]*/,"");

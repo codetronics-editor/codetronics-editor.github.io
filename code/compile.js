@@ -22,6 +22,8 @@ function setup_compile() {
 				pattern[0] += ")";
 			});
 			compile.regexp = new RegExp(pattern[0],"g");
+			
+			//console.log(compile.regexp);
 		},
 		buildRegexp: function(pattern,list) {
 			pattern[0] += "(?:";
@@ -37,6 +39,10 @@ function setup_compile() {
 							pattern[0] += "-\\u" + unicode2.substr(unicode2.length - 4);
 						});
 						pattern[0] += "]";
+						break;
+					case "?":
+						compile.buildRegexp(pattern,val1[1]);
+						pattern[0] += "?";
 						break;
 					case "*":
 						compile.buildRegexp(pattern,val1[1]);
@@ -61,59 +67,46 @@ function setup_compile() {
 			});
 			pattern[0] += ")";
 		},
-		incNextId: function() {
-			var nextId = worker.session.current.nextId;
-			for(var q = 0; q < nextId.length; ++q) {
-				++nextId[q];
-				if(nextId[q] == Number.MAX_SAFE_INTEGER)
-					nextId[q] = 0;
-				else
-					break;
-			}
-			if(q == nextId.length) {
-				nextId.push(1);
-			}
-		},
 		run: function() {
 			compile.passCtr++;
-			console.log("compiler pass " + compile.passCtr + " started at " + new Date());
+			console.log("compile pass " + compile.passCtr + " started at " + new Date());
 			
 			try {
 				
-				// detect changed nodes
-				//var print3 = print2;
-				
+				//// detect changed nodes (compare with outputText & outputGroups)
 				/*
 				compare edited string with previous compiler output
 				look up containing node of range in previous compiler output
 				recursively search all unchanged descendant nodes (with id) in containing node
-				
 				*/
 				
-				
-				var print3 = worker.session.compile.inputText.replace(/<br>/g," ");
-				//console.log(" :) "+print3);
 				
 				// parse here ...
 				var token1 = [];
 				var token2 = [];
 				var groupnode = [];
-				compile.tokenize(print3,token1,token2);
+				compile.tokenize(worker.session.compile.inputText,token1,token2);
 				compile.prepareParse(token1,token2,groupnode);
 				compile.performParse(groupnode);
 				
-				// update tree
-				var parse4 = token2[0];
-				//worker.session.compile.visibleRoot = ;
+				worker.session.analyze.parse = token1;
 				
-				// format html
+				//// analyze: walk parse tree, remove variant token & flag
+				//// update visible subtree
+				//// print & format visible subtree
+				
+				/*
+				
+				//// update tree in analyze
+				worker.session.compile.visibleRoot = ;
+				
+				//// format html in analyze
 				var print4 = compile.print(parse4);
 				worker.session.compile.outputText = print4;
 				
+				*/
 				
-				//console.log(JSON.stringify(token1));
-				
-				/*var log = compile.printTokenTree(token1,1).split("\n");
+				/*var log = compile.printTokenTree(token1,1).split("\n"); ////
 				for(var p = 0; p < log.length; ) {
 					var log2 = "";
 					for(var q = 0; p < log.length && q < 100; ++p,++q) {
@@ -121,32 +114,17 @@ function setup_compile() {
 					}
 					console.log(log2);
 				}*/
-				
 			
-				console.log("compiler pass " + compile.passCtr + " finished at " + new Date());
+				console.log("compile pass " + compile.passCtr + " finished at " + new Date());
 			}
-			catch(ex) {
-				//console.log(compile.printTokenTree(token1,1));
-				console.log("compiler pass " + compile.passCtr + " aborted at " + new Date()); //// leave path up compiled
-				console.log(ex); ////
-				throw ex;
+			catch(ex) { //// todo discard parsed & recover previous state
+				console.log("compile pass " + compile.passCtr + " aborted at " + new Date()); //// leave path up compiled
+				throw ex; ////
 			}
 			
 			//// restore selection
 			
 			//// do not update editor if edited (compile again)
-		},
-		print: function() {
-			/*
-			             grammar.production[match1.type][0]
-			var print1 = grammar.production[parse.type][0].print(parse);*/
-			
-			// format html
-			
-			
-			
-			
-			//// browser-specific newline
 		},
 		tokenize: function(src,token1,token2) {  // use regex api
 			compile.regexp.lastIndex = 0;
@@ -270,9 +248,6 @@ function setup_compile() {
 				throw new Error();
 			}
 			
-			
-			//console.log(delimiter);
-			
 			// parse @config annotations
 			for(var p = delimiter[2].length - 1; p >= 0; --p) {
 				if(delimiter[2][p][1] == 0 && delimiter[2][p][0] > 0 && token1[delimiter[2][p][0] - 1].value == "@") {
@@ -364,12 +339,6 @@ function setup_compile() {
 			groupnode.sort(function(a,b) {
 				return b[1] - a[1];
 			});
-			
-			
-			//console.log(JSON.stringify(token1));
-			//console.log(JSON.stringify(groupnode));
-			//console.log(groupnode);
-			
 		},
 		performParse: function(groupnode) {  // simple bottom-up ll-parser with operator precedence
 			// warning: variant xor iterate
@@ -445,6 +414,10 @@ function setup_compile() {
 			var s = 0;
 			for(; r < pattern.length && q + s < token3.length; ++r) { compile.logCount2++;
 				
+				/*if(r >= 0 && pattern == grammar.production.for[0].pattern[2][3]) {
+					console.log(r,q,s,pattern,token3,compile.logCount1,compile.logCount2);
+				}*/
+				
 				var val3 = token3[q + s];
 				var val4 = pattern[r];
 				if(val4 == " ") {
@@ -456,15 +429,21 @@ function setup_compile() {
 				if(typeof(val4) == "object") {
 					switch(val4[0]) {
 					case "p":
+					case "p$":
 						if(val3.parsed && (val3.type == val4[1]
 						|| (grammar.categorize[val4[1]] && grammar.categorize[val4[1]][val3.type]))) {
-							match1[val4[2]] = val3;
+							match1[val4[2]] = utils.clone(val3);
 							s += (val3.variant) ? (val3.skip + 1) : 1;
 						}
 						else if(val3.parsed && val3.variant) {
 							--r;
 							++s;
 							continue;
+						}
+						else if(val4[0] == "p$") { ////
+							match1[val4[2]] = utils.clone(val3);
+							match1[val4[2]].unparsed = true;
+							++s;
 						}
 						else {
 							return null;
@@ -474,6 +453,8 @@ function setup_compile() {
 					case "g":
 						if(!val3.parsed && val3.type == "group" && val3.delimiter == val4[1]) {
 							var match2 = compile.matchProduction(val3.token,0,val4[3]);
+							
+							//if(val3.delimiter == "(")console.log(!!match2,/*match2.skip,*/val3.token.length,val3.token,0,val4[3]);
 							
 							if(match2 && match2.skip == val3.token.length) {
 								match1[val4[2]] = match2;
@@ -533,6 +514,7 @@ function setup_compile() {
 						
 						break;
 					case "|":
+					case "|$":
 						utils.forMap(val4[2],function(val5,key5) {
 							var match2 = compile.matchProduction(token3,q + s,val5);
 						
@@ -552,6 +534,18 @@ function setup_compile() {
 						if(match1[val4[1]]) {
 							s += match1[val4[1]].skip;
 						}
+						else if(val4[0] == "|$") { ////
+							if(val3.parsed && val3.variant) {
+								--r;
+								++s;
+								continue;
+							}
+							else {
+								match1[val4[2]] = utils.clone(val3);
+								match1[val4[2]].unparsed = true;
+								++s;
+							}
+						}
 						else {
 							return null;
 						}
@@ -561,7 +555,7 @@ function setup_compile() {
 				}
 				else {
 					if(val3.parsed && (val3.type == "punctuator" || val3.type == "identifier") && val3.value == val4) {
-						s += (val3.variant) ? (val3.skip + 1) : 1;  // actually terminals have no variant
+						++s;
 					}
 					else if(val3.parsed && val3.variant) {
 						--r;
@@ -581,9 +575,25 @@ function setup_compile() {
 					continue;
 				}
 				
+				match1 = match1 || {};  // init on first test
+				
 				if(typeof(val4) == "object") {
-					if({"p": true,"g": true,"+": true,"|": true}[val4[0]]) {
+					switch(val4[0]) {
+					case "p":
+					case "p$":
+					case "g":
+					case "+":
+					case "|":
+					case "|$":
 						return null;
+					
+					case "?":
+						match1[val4[1]] = null;
+						break;
+					
+					case "*":
+						match1[val4[1]] = [];
+						break;
 					}
 				}
 				else {
@@ -594,6 +604,10 @@ function setup_compile() {
 			if(match1) {
 				match1.skip = s;
 			}
+				
+			/*if(r >= 2 && pattern == grammar.production.if[0].pattern) {
+				console.log("====");
+			}*/
 			
 			return match1;
 		},

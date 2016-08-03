@@ -13,21 +13,34 @@ function setup_grammar() {
 			var key2 = (typeof(val1) == "object") ? val1[0] : val1;
 			var val2 = (typeof(val1) == "object") ? val1[1] : val1;
 			production.production[key2] = {
+				structure: [
+					["p","left"],
+					["p","right"]
+				],
 				pattern: [
 					["p","expression","left"]," ",configToken(),val2," ",["p","expression","right"]
 				],
-				parse: function(print) {
-					var parse = JSON.parse(JSON.stringify(print));
-					parse.left = parseParenthese(print.left);
-					parse.right = parseParenthese(print.right);
-					parse.parsed = parse.parsed && (!parsedEx || parsedEx(parse));
-					return parse;
+				parse: function(val3) {
+					var res3 = utils.clone(val3);
+					
+					res3.config = val3.config || {}; ////
+					
+					res3.left = parseParenthese(val3.left);
+					res3.right = parseParenthese(val3.right);
+					
+					res3.parsed = val3.parsed && (!parsedEx || parsedEx(res3));
+					
+					return res3;
 				},
-				print: function(parse) {
-					var print = JSON.parse(JSON.stringify(parse));
-					print.left = printParenthese(parse.left,"sequence",parse);
-					print.right = printParenthese(parse.right,"sequence",parse);
-					return print;
+				print: function(val3) {
+					var res3 = utils.clone(val3);
+					
+					res3.config = val3.config;
+					
+					res3.left = printParenthese(val3.left,"sequence",val3);
+					res3.right = printParenthese(val3.right,"sequence",val3);
+					
+					return res3;
 				},
 			};
 		});
@@ -42,19 +55,31 @@ function setup_grammar() {
 			var key2 = (typeof(val1) == "object") ? val1[0] : val1;
 			var val2 = (typeof(val1) == "object") ? val1[1] : val1;
 			production.production[key2] = {
+				structure: [
+					["p","left"]
+				],
 				pattern: [
 					configToken(),val2," ",["p","expression","left"]
 				],
-				parse: function(print) {
-					var parse = JSON.parse(JSON.stringify(print));
-					parse.left = parseParenthese(print.left);
-					parse.parsed = parse.parsed && (!parsedEx || parsedEx(parse));
-					return parse;
+				parse: function(val3) {
+					var res3 = utils.clone(val3);
+					
+					res3.config = val3.config || {}; ////
+					
+					res3.left = parseParenthese(val3.left);
+					
+					res3.parsed = val3.parsed && (!parsedEx || parsedEx(res3));
+					
+					return res3;
 				},
-				print: function(parse) {
-					var print = JSON.parse(JSON.stringify(parse));
-					print.left = printParenthese(parse.left,"sequence",parse);
-					return print;
+				print: function(val3) {
+					var res3 = utils.clone(val3);
+					
+					res3.config = val3.config;
+					
+					res3.left = printParenthese(val3.left,"sequence",val3);
+					
+					return res3;
 				},
 			};
 		});
@@ -69,19 +94,31 @@ function setup_grammar() {
 			var key2 = (typeof(val1) == "object") ? val1[0] : val1;
 			var val2 = (typeof(val1) == "object") ? val1[1] : val1;
 			production.production[key2] = {
+				structure: [
+					["p","left"]
+				],
 				pattern: [
 					["p","expression","left"]," ",configToken(),val2
 				],
-				parse: function(print) {
-					var parse = JSON.parse(JSON.stringify(print));
-					parse.left = parseParenthese(print.left);
-					parse.parsed = parse.parsed && (!parsedEx || parsedEx(parse));
-					return parse;
+				parse: function(val3) {
+					var res3 = utils.clone(val3);
+					
+					res3.config = val3.config || {}; ////
+					
+					res3.left = parseParenthese(val3.left);
+					
+					res3.parsed = val3.parsed && (!parsedEx || parsedEx(res3));
+					
+					return res3;
 				},
-				print: function(parse) {
-					var print = JSON.parse(JSON.stringify(parse));
-					print.left = printParenthese(parse.left,"sequence",parse);
-					return print;
+				print: function(val3) {
+					var res3 = utils.clone(val3);
+					
+					res3.config = val3.config;
+					
+					res3.left = printParenthese(val3.left,"sequence",val3);
+					
+					return res3;
 				},
 			};
 		});
@@ -95,12 +132,12 @@ function setup_grammar() {
 			expression.parenthese = i;
 		return expression;
 	}
-	function printParenthese(expression,mode,parse) {  //// tree write  a+(b+c) != a+b+c
+	function printParenthese(expression,mode,val1) {  //// tree write  a+(b+c) != a+b+c
 		var i = {
 			restore:  0,  // restore exact group count before parsing
 			group:    1,  // restore, but group at least once
 			              // restore, but group at least once if contained.type < container.type
-			sequence: (grammar.production[expression.type][1] < grammar.production[parse.type][1]) ? 1 : 0,
+			sequence: (grammar.production[expression.type][1] < grammar.production[val1.type][1]) ? 1 : 0,
 		}[mode];
 		i = expression.parenthese || i;
 		for(; i; --i)
@@ -110,6 +147,23 @@ function setup_grammar() {
 			};
 		return expression;
 	}
+	function parseExpression(statement) { ////
+		return (statement.type == "expression;") ? statement.expression : statement;
+	}
+	function printExpression(statement) {
+		return (grammar.categorize["expression"][statement.type]) ? {
+			type: "expression;",
+			expression: statement,
+		} : statement;
+	}
+	
+	////
+	//// PARSE no print, PRINT no parse !!!
+	//// pass already cloned, no return
+	////
+	
+	//// literal/property/terminal id ?
+	//// terminal parsed/unparsed ?
 	
 	return {
 		pattern: [],
@@ -125,36 +179,50 @@ function setup_grammar() {
 			{
 				production: {   //// tolerate unparsed in project, package and class
 					project: {
+						structure: [
+							["[p","entry"]
+						],
 						pattern: [
 							configToken(),"project"," ",["p","string","name"]," ",["g","{","entry",[
 								["n"],
-									["i",+1],["+","entry",[
-										["p","package","entry"],["n"],
+									["i",+1],["*","entry",[
+										["p$","package","entry"],["n"],
 										["n"]
 									]],
 								["i",-1]
 							]]
 						],
-						parse: function(print) {
-							var parse = JSON.parse(JSON.stringify(print));
-							parse.config.name = utils.unescapeQuote(parse.name.value.substring(1,parse.name.value.length - 1)); //// unescape
-							parse.entry = [];
-							utils.forList(JSON.parse(JSON.stringify(print.entry.entry)),function(val) {
-								parse.entry.push(val.entry);
+						parse: function(val1) {
+							var res1 = utils.clone(val1);
+							
+							res1.config = val1.config || {}; ////
+							res1.config.name = utils.unescapeQuote(val1.name.value.substring(1,val1.name.value.length - 1)); //// unescape
+							
+							res1.entry = [];
+							utils.forList(val1.entry.entry,function(val2) {
+								res1.entry.push(val2.entry);
 							});
-							return parse;
+							
+							delete res1.name;
+							
+							return res1;
 						},
-						print: function(parse) {
-							var print = JSON.parse(JSON.stringify(parse));
-							print.name = {
+						print: function(val1) {
+							var res1 = utils.clone(val1);
+							
+							res1.config = val1.config;
+							
+							res1.name = {
 								type: "string",
-								value: "\"" + utils.escapeQuote(parse.config.name) + "\"", //// escape
+								value: "\"" + utils.escapeQuote(val1.config.name) + "\"", //// escape
 							};
-							print.entry = {entry: []};
-							utils.forList(JSON.parse(JSON.stringify(parse.entry)),function(val) {
-								print.entry.entry.push({entry: val});
+							
+							res1.entry = {entry: []};
+							utils.forList(val1.entry,function(val2) {
+								res1.entry.entry.push({entry: val2});
 							});
-							return print;
+							
+							return res1;
 						},
 					},
 				},
@@ -162,11 +230,14 @@ function setup_grammar() {
 			{
 				production: {
 					package: {
+						structure: [
+							["[p","entry"]
+						],
 						pattern: [
 							configToken(),"package"," ",["p","identifier","name"]," ",["g","{","entry",[
 								["n"],
-									["i",+1],["+","entry",[
-										["|","entry",{
+									["i",+1],["*","entry",[
+										["|$","entry",{
 											package: [["p","package","entry"]],
 											class: [["p","class","entry"]],
 										}],["n"],
@@ -175,26 +246,42 @@ function setup_grammar() {
 								["i",-1]
 							]]
 						],
-						parse: function(print) {
-							var parse = JSON.parse(JSON.stringify(print));
-							parse.config.name = parse.name.value;
-							parse.entry = [];
-							utils.forList(JSON.parse(JSON.stringify(print.entry.entry)),function(val) {
-								parse.entry.push(val.entry.entry);
+						parse: function(val1) {
+							var res1 = utils.clone(val1);
+							
+							res1.config = val1.config || {}; ////
+							res1.config.name = val1.name.value;
+							
+							res1.entry = [];
+							utils.forList(val1.entry.entry,function(val2) {
+								res1.entry.push(val2.entry.entry);
 							});
-							return parse;
+							
+							delete res1.name;
+							
+							return res1;
 						},
-						print: function(parse) {
-							var print = JSON.parse(JSON.stringify(parse));
-							print.name = {
+						print: function(val1) {
+							var res1 = utils.clone(val1);
+							
+							res1.config = val1.config;
+							
+							res1.name = {
 								type: "identifier",
-								value: utils.makeIdentifier(parse.config.name),
+								value: utils.makeIdentifier(val1.config.name),
 							};
-							print.entry = {entry: []};
-							utils.forList(JSON.parse(JSON.stringify(parse.entry)),function(val) {
-								print.entry.entry.push({entry: {entry: val}});
+							
+							res1.entry = {entry: []};
+							utils.forList(val1.entry,function(val2) {
+								var res2 = {};
+								
+								res2.entry = {entry: val2};
+								res2.entry.production = val2.type;
+								
+								res1.entry.entry.push(res2);
 							});
-							return print;
+							
+							return res1;
 						},
 					},
 				},
@@ -202,39 +289,61 @@ function setup_grammar() {
 			{
 				production: {
 					class: {
+						structure: [
+							["[p","entry"]
+						],
 						pattern: [
 							configToken(),"class"," ",["p","identifier","name"]," ",["g","{","entry",[
 								["n"],
-									["i",+1],["+","entry",[
-										["|","entry",{
+									["i",+1],["*","entry",[
+										["|$","entry",{
 											var: [["p","var","entry"]],
 											function: [["p","function","entry"]],
-										}],";",["n"],
+										}],["?","separator",[  // print all
+											";"
+										]],["n"],
 										["n"]
 									]],
 								["i",-1]
 							]]
 						],
-						parse: function(print) {
-							var parse = JSON.parse(JSON.stringify(print));
-							parse.config.name = parse.name.value;
-							parse.entry = [];
-							utils.forList(JSON.parse(JSON.stringify(print.entry.entry)),function(val) {
-								parse.entry.push(val.entry.entry);
+						parse: function(val1) {
+							var res1 = utils.clone(val1);
+							
+							res1.config = val1.config || {}; ////
+							res1.config.name = val1.name.value;
+							
+							res1.entry = [];
+							utils.forList(val1.entry.entry,function(val2) {
+								res1.entry.push(val2.entry.entry);
 							});
-							return parse;
+							
+							delete res1.name;
+							
+							return res1;
 						},
-						print: function(parse) {
-							var print = JSON.parse(JSON.stringify(parse));
-							print.name = {
+						print: function(val1) {
+							var res1 = utils.clone(val1);
+							
+							res1.config = val1.config;
+							
+							res1.name = {
 								type: "identifier",
-								value: utils.makeIdentifier(parse.config.name),
+								value: utils.makeIdentifier(val1.config.name),
 							};
-							print.entry = {entry: []};
-							utils.forList(JSON.parse(JSON.stringify(parse.entry)),function(val) {
-								print.entry.entry.push({entry: {entry: val}});
+							
+							res1.entry = {entry: []};
+							utils.forList(val1.entry,function(val2) {
+								var res2 = {};
+								
+								res2.entry = {entry: val2};
+								res2.entry.production = val2.type;
+								res2.separator = true;
+								
+								res1.entry.entry.push(res2);
 							});
-							return print;
+							
+							return res1;
 						},
 					},
 				},
@@ -242,8 +351,12 @@ function setup_grammar() {
 			{
 				production: {
 					function: {
+						structure: [
+							["[p","parameter"],
+							["p","statement"]
+						],
 						pattern: [
-							configToken(),"function"," ",["p","identifier","name"]," ",["g","(","parameter",[
+							configToken(),"function"," ",["p","identifier","name"],":"," ",["g","(","parameter",[
 								["*","parameter",[
 									configToken(),["p","property","parameter"],["?","separator",[  // match last => unparsed
 										","," "
@@ -251,33 +364,55 @@ function setup_grammar() {
 								]]
 							]]," ",["p","block","statement"]
 						],
-						parse: function(print) {
-							var parse = JSON.parse(JSON.stringify(print));
-							parse.parsed = (!print.parameter.parameter.length
-								|| !print.parameter.parameter[print.parameter.parameter.length - 1].separator);
-							parse.config.name = parse.name.value;
-							parse.parameter = [];
-							utils.forList(JSON.parse(JSON.stringify(print.parameter.parameter)),function(val) {
-								val.parameter.config = val.config;
-								delete val.separator;
-								parse.parameter.push(val.parameter);
+						parse: function(val1) {
+							var res1 = utils.clone(val1);
+							
+							res1.config = val1.config || {}; ////
+							res1.config.name = val1.name.value;
+							
+							res1.parsed = (!val1.parameter.parameter.length
+								|| !val1.parameter.parameter[val1.parameter.parameter.length - 1].separator);
+							
+							res1.parameter = [];
+							utils.forList(val1.parameter.parameter,function(val2) {
+								var res2 = val2.parameter;
+								
+								res2.config = val2.config || {}; ////
+								
+								res1.parameter.push(res2);
 							});
-							return parse;
+							
+							res1.statement = val1.statement;
+							
+							delete res1.name;
+							
+							return res1;
 						},
-						print: function(parse) {
-							var print = JSON.parse(JSON.stringify(parse));
-							print.name = {
+						print: function(val1) {
+							var res1 = utils.clone(val1);
+							
+							res1.config = val1.config;
+							
+							res1.name = {
 								type: "identifier",
-								value: utils.makeIdentifier(parse.config.name),
+								value: utils.makeIdentifier(val1.config.name),
 							};
-							print.parameter = {parameter: []};
-							utils.forList(JSON.parse(JSON.stringify(parse.parameter)),function(val,i) {
-								val = {parameter: val};
-								val.config = val.parameter.config;
-								val.separator = (i < parse.parameter.length - 1);
-								print.parameter.parameter.push(val);
+							
+							res1.parameter = {parameter: []};
+							utils.forList(val1.parameter,function(val2,i) {
+								var res2 = {};
+								
+								res2.config = val2.config;
+								
+								res2.parameter = val2;
+								res2.separator = (i < val1.parameter.length - 1);
+								
+								res1.parameter.parameter.push(res2);
 							});
-							return print;
+							
+							res1.statement = val1.statement;
+							
+							return res1;
 						},
 					},
 				},
@@ -286,39 +421,16 @@ function setup_grammar() {
 			// statement
 			{
 				production: {
-					block: {  //// tolerate unparsed in block
-						variant: true,
-						pattern: [
-							configToken(),["g","{","statement",[
-								["n"],
-									["i",+1],["*","statement",[
-										["p","statement","statement"],["n"]
-									]],
-								["i",-1]
+					if: {
+						structure: [
+							["[{","statement",[
+								["p","condition"],
+								["p","statement"]
+							]],
+							["{","else",[
+								["p","statement"]
 							]]
 						],
-						parse: function(print) {
-							var parse = JSON.parse(JSON.stringify(print));
-							parse.statement = [];
-							utils.forList(JSON.parse(JSON.stringify(print.statement.statement)),function(val) {
-								parse.statement.push(val.statement);
-							});
-							return parse;
-						},
-						print: function(parse) {
-							var print = JSON.parse(JSON.stringify(parse));
-							print.statement = {statement: []};
-							utils.forList(JSON.parse(JSON.stringify(parse.statement)),function(val) {
-								print.statement.statement.push({statement: val});
-							});
-							return print;
-						},
-					},
-				},
-			},
-			{
-				production: {
-					if: {
 						pattern: [
 							configToken(),"if",["g","(","condition",[
 								["p","expression","condition"]
@@ -327,36 +439,58 @@ function setup_grammar() {
 									["p","expression","condition"]
 								]]," ",["p","block","statement"]
 							]],["?","else",[
-								["n"],"else"," ",["p","block","else"]
+								["n"],"else"," ",["p","block","statement"]
 							]]
 						],
-						parse: function(print) {
-							var parse = JSON.parse(JSON.stringify(print));
-							parse.statement = [{
-								condition: parseParenthese(print.condition.condition),
-								statement: print.statement,
+						parse: function(val1) {
+							var res1 = utils.clone(val1);
+							
+							res1.config = val1.config || {}; ////
+							
+							res1.statement = [{
+								condition: parseParenthese(val1.condition.condition),
+								statement: val1.statement,
 							}];
-							utils.forList(JSON.parse(JSON.stringify(print.elseif)),function(val) {
-								val.condition = parseParenthese(val.condition.condition);
-								parse.statement.push(val);
+							
+							utils.forList(val1.elseif,function(val2) {
+								var res2 = {};
+								
+								res2.condition = parseParenthese(val2.condition.condition);
+								res2.statement = val2.statement;
+								
+								res1.statement.push(res2);
 							});
-							parse.else = (print.else) ? print.else.else : null;
-							delete parse.elsif;
-							return parse;
+							
+							res1.else = (val1.else) ? val1.else.else : null;
+							
+							delete res1.condition;
+							delete res1.elseif;
+							
+							return res1;
 						},
-						print: function(parse) {
-							var print = JSON.parse(JSON.stringify(parse));
-							print.condition = {condition: printParenthese(parse.statement[0].condition,"restore")};
-							print.statement = parse.statement[0].statement;
-							print.elseif = [];
-							utils.forList(JSON.parse(JSON.stringify(parse.statement)),function(val,i) {
+						print: function(val1) {
+							var res1 = utils.clone(val1);
+							
+							res1.config = val1.config;
+							
+							res1.condition = {condition: printParenthese(val1.statement[0].condition,"restore")};
+							res1.statement = val1.statement[0].statement;
+							
+							res1.elseif = [];
+							utils.forList(val1.statement,function(val2,i) {
 								if(i) {
-									val.condition = {condition: printParenthese(val.condition,"restore")};
-									print.elseif.push(val);
+									var res2 = {};
+									
+									res2.condition = {condition: printParenthese(val2.condition,"restore")};
+									res2.statement = val2.statement;
+									
+									res1.elseif.push(res2);
 								}
 							});
-							print.else = (parse.else) ? {else: parse.else} : null;
-							return print;
+							
+							res1.else = (val1.else) ? {else: val1.else} : null;
+							
+							return res1;
 						},
 					},
 				},
@@ -364,68 +498,96 @@ function setup_grammar() {
 			{
 				production: {
 					switch: {
+						structure: [
+							["p","expression"],
+							["[{","statement",[
+								["p","expression"],
+								["[p","statement"]
+							]],
+							["{","default",[
+								["[p","statement"]
+							]]
+						],
 						pattern: [
 							configToken(),"switch",["g","(","expression",[
 								["p","expression","expression"]
 							]]," ",["g","{","statement",[
 								["n"],
 								["*","statement",[
-									"case"," ",["p","expression","expression"],":",["n"]
+									"case"," ",["p","expression","expression"],":",["n"],
 										["i",+1],["*","statement",[
-											["p","statement","statement"],["n"]
+											["p$","statement","statement"],["n"]
 										]],
 									["i",-1]
 								]],
 								["?","default",[
-									"default",":",["n"]
+									"default",":",["n"],
 										["i",+1],["*","statement",[
-											["p","statement","statement"],["n"]
+											["p$","statement","statement"],["n"]
 										]],
 									["i",-1]
 								]]
 							]]
 						],
-						parse: function(print) {
-							var parse = JSON.parse(JSON.stringify(print));
-							parse.expression = parseParenthese(print.expression.expression);
-							parse.statement = [];
-							utils.forList(JSON.parse(JSON.stringify(print.statement.statement)),function(val1) {
-								var val2 = JSON.parse(JSON.stringify(val1));
-								val2.expression = parseParenthese(val1.expression);
-								val2.statement = [];
-								utils.forList(JSON.parse(JSON.stringify(val1.statement)),function(val3) {
-									val2.statement.push(val3.statement);
+						parse: function(val1) {
+							var res1 = utils.clone(val1);
+							
+							res1.config = val1.config || {}; ////
+							
+							res1.expression = parseParenthese(val1.expression.expression);
+							
+							res1.statement = [];
+							utils.forList(val1.statement.statement,function(val2) {
+								var res2 = {};
+								
+								res2.expression = parseParenthese(val2.expression);
+								
+								res2.statement = [];
+								utils.forList(val2.statement,function(val3) {
+									res2.statement.push(parseExpression(val3.statement));
 								});
-								parse.statement.push(val2);
+								
+								res1.statement.push(res2);
 							});
-							if(print.statement.default) {
-								parse.default = {statement: []};
-								utils.forList(JSON.parse(JSON.stringify(print.statement.default.statement)),function(val) {
-									parse.default.statement.push(val.statement);
+							
+							if(val1.statement.default) {
+								res1.default = {statement: []};
+								utils.forList(val1.statement.default,function(val2) {
+									res1.default.statement.push(parseExpression(val2.statement));
 								});
 							}
-							return parse;
+							
+							return res1;
 						},
-						print: function(parse) {
-							var print = JSON.parse(JSON.stringify(parse));
-							print.expression = {expression: printParenthese(parse.expression,"restore")};
-							print.statement = {statement: []};
-							utils.forList(JSON.parse(JSON.stringify(parse.statement)),function(val1) {
-								var val2 = JSON.parse(JSON.stringify(val1));
-								val2.expression = printParenthese(val1.expression,"restore");
-								val2.statement = [];
-								utils.forList(JSON.parse(JSON.stringify(val1.statement)),function(val3) {
-									val2.statement.push({statement: val3});
+						print: function(val1) {
+							var res1 = utils.clone(val1);
+							
+							res1.config = val1.config;
+							
+							res1.expression = {expression: printParenthese(val1.expression,"restore")};
+							
+							res1.statement = {statement: []};
+							utils.forList(val1.statement,function(val2) {
+								var res2 = {};
+								
+								res2.expression = printParenthese(val2.expression,"restore");
+								
+								res2.statement = [];
+								utils.forList(val2.statement,function(val3) {
+									res2.statement.push({statement: printExpression(val3)});
 								});
-								print.statement.push(val2);
+								
+								res1.statement.push(res2);
 							});
-							if(parse.default) {
-								print.statement.default = {statement: []};
-								utils.forList(JSON.parse(JSON.stringify(parse.default.statement)),function(val) {
-									print.statement.default.statement.push({statement: val});
+							
+							if(val1.default) {
+								res1.statement.default = {statement: []};
+								utils.forList(val1.default.statement,function(val2) {
+									res1.statement.default.statement.push({statement: printExpression(val2)});
 								});
 							}
-							return print;
+							
+							return res1;
 						},
 					},
 				},
@@ -433,20 +595,34 @@ function setup_grammar() {
 			{
 				production: {
 					while: {
+						structure: [
+							["p","condition"],
+							["p","statement"]
+						],
 						pattern: [
 							configToken(),"while",["g","(","condition",[
 								["p","expression","condition"]
 							]]," ",["p","block","statement"]
 						],
-						parse: function(print) {
-							var parse = JSON.parse(JSON.stringify(print));
-							parse.condition = parseParenthese(print.condition.condition);
-							return parse;
+						parse: function(val1) {
+							var res1 = utils.clone(val1);
+							
+							res1.config = val1.config || {}; ////
+							
+							res1.condition = parseParenthese(val1.condition.condition);
+							res1.statement = val1.statement;
+							
+							return res1;
 						},
-						print: function(parse) {
-							var print = JSON.parse(JSON.stringify(parse));
-							print.condition = {condition: printParenthese(parse.condition,"restore")};
-							return print;
+						print: function(val1) {
+							var res1 = utils.clone(val1);
+							
+							res1.config = val1.config;
+							
+							res1.condition = {condition: printParenthese(val1.condition,"restore")};
+							res1.statement = val1.statement;
+							
+							return res1;
 						},
 					},
 				},
@@ -454,11 +630,18 @@ function setup_grammar() {
 			{
 				production: {
 					for: {
+						structure: [
+							["p","var"],
+							["p","condition"],
+							["[p","step"],
+							["p","statement"]
+						],
 						pattern: [
 							configToken(),"for",["g","(","for",[
-								["?","var",[
-									["p","var","var"]
-								]],";"," ",["?","condition",[
+								["|","var",{
+									var: [["p","var","var"]],
+									";": [";"],
+								}]," ",["?","condition",[
 									["p","expression","condition"]
 								]],";"," ",["*","step",[
 									["p","statement","step"],["?","separator",[  // match last => unparsed
@@ -467,31 +650,52 @@ function setup_grammar() {
 								]]
 							]]," ",["p","block","statement"]
 						],
-						parse: function(print) {
-							var parse = JSON.parse(JSON.stringify(print));
-							parse.parsed = (!print.for.step.length
-								|| !print.for.step[print.for.step.length - 1].separator);
-							parse.var = (print.for.var) ? print.for.var.var : null;
-							parse.condition = (print.for.condition) ? parseParenthese(print.for.condition.condition) : null;
-							parse.step = [];
-							utils.forList(JSON.parse(JSON.stringify(print.for.step)),function(val) {
-								parse.step.push(val.step);
+						parse: function(val1) {
+							var res1 = utils.clone(val1);
+							
+							res1.config = val1.config || {}; ////
+							
+							res1.parsed = (!val1.for.step.length
+								|| !val1.for.step[val1.for.step.length - 1].separator);
+							
+							res1.var = (val1.for.var.var) ? val1.for.var.var : null;
+							res1.condition = (val1.for.condition) ? parseParenthese(val1.for.condition.condition) : null;
+							
+							res1.step = [];
+							utils.forList(val1.for.step,function(val2) {
+								res1.step.push(parseExpression(val2.step));
 							});
-							delete parse.for;
-							return parse;
+							
+							res1.statement = val1.statement;
+							
+							delete res1.for;
+							
+							return res1;
 						},
-						print: function(parse) {
-							var print = JSON.parse(JSON.stringify(parse));
-							print.for = {};
-							print.for.var = (parse.var) ? {var: parse.var} : null;
-							print.for.condition = (parse.condition) ? {condition: printParenthese(parse.condition,"restore")} : null;
-							print.for.step = [];
-							utils.forList(JSON.parse(JSON.stringify(parse.step)),function(val,i) {
-								val = {step: val};
-								val.separator = (i < parse.step.length - 1);
-								print.for.step.push(val);
+						print: function(val1) {
+							var res1 = utils.clone(val1);
+							
+							res1.config = val1.config;
+							
+							res1.for = {};
+							res1.for.var = (val1.var) ? {var: val1.var} : {};
+							res1.for.var.production = (val1.var) ? "var" : ";";
+							res1.for.condition = (val1.condition) ? {condition: printParenthese(val1.condition,"restore")} : null;
+							
+							res1.for.step = [];
+							utils.forList(val1.step,function(val2,i) {
+								var res2 = {};
+								
+								val2.separator = false;
+								res2.step = printExpression(val2);
+								res2.separator = (i < val1.step.length - 1);
+								
+								res1.for.step.push(res2);
 							});
-							return print;
+							
+							res1.statement = val1.statement;
+							
+							return res1;
 						},
 					},
 				},
@@ -499,23 +703,43 @@ function setup_grammar() {
 			{
 				production: {
 					"for in": {
+						structure: [
+							["p","var"],
+							["p","expression"],
+							["p","statement"]
+						],
 						pattern: [
 							configToken(),"for",["g","(","for",[
 								["p","var","var"]," ","in"," ",["p","expression","expression"]
 							]]," ",["p","block","statement"]
 						],
-						parse: function(print) {
-							var parse = JSON.parse(JSON.stringify(print));
-							parse.parsed = (print.for.var.var.length == 1 && !print.for.var.var[0].expression);
-							parse.var = print.for.var;
-							parse.expression = parseParenthese(print.for.expression);
-							delete parse.for;
-							return parse;
+						parse: function(val1) {
+							var res1 = utils.clone(val1);
+							
+							res1.config = val1.config || {}; ////
+							
+							res1.parsed = (val1.for.var.var.length == 1 && !val1.for.var.var[0].expression);
+							
+							res1.var = val1.for.var;
+							res1.expression = parseParenthese(val1.for.expression);
+							res1.statement = val1.statement;
+							
+							delete res1.for;
+							
+							return res1;
 						},
-						print: function(parse) {
-							var print = JSON.parse(JSON.stringify(parse));
-							print.for = {var: parse.var,expression: printParenthese(parse.expression,"restore")};
-							return print;
+						print: function(val1) {
+							var res1 = utils.clone(val1);
+							
+							res1.config = val1.config;
+							
+							res1.for = {};
+							val1.var.separator = false;
+							res1.var = val1.var,expression;
+							res1.expression = printParenthese(val1.expression,"restore");
+							res1.statement = val1.statement;
+							
+							return res1;
 						},
 					},
 				},
@@ -523,6 +747,11 @@ function setup_grammar() {
 			{
 				production: {
 					try: {
+						structure: [
+							["p","statement"],
+							["p","catch"],
+							["p","finally"]
+						],
 						pattern: [
 							configToken(),"try"," ",["p","block","statement"],["?","catch",[
 								["n"],"catch",["e","(ex)"]," ",["p","block","catch"]
@@ -530,17 +759,70 @@ function setup_grammar() {
 								["n"],"finally"," ",["p","block","finally"]
 							]]
 						],
-						parse: function(print) {
-							var parse = JSON.parse(JSON.stringify(print));
-							parse.catch = (print.catch) ? print.catch.catch : null;
-							parse.finally = (print.finally) ? print.finally.finally : null;
-							return parse;
+						parse: function(val1) {
+							var res1 = utils.clone(val1);
+							
+							res1.config = val1.config || {}; ////
+							
+							res1.statement = val1.statement;
+							res1.catch = (val1.catch) ? val1.catch.catch : null;
+							res1.finally = (val1.finally) ? val1.finally.finally : null;
+							
+							return res1;
 						},
-						print: function(parse) {
-							var print = JSON.parse(JSON.stringify(parse));
-							print.catch = (parse.catch) ? {catch: parse.catch} : null;
-							print.finally = (parse.finally) ? {finally: parse.finally} : null;
-							return print;
+						print: function(val1) {
+							var res1 = utils.clone(val1);
+							
+							res1.config = val1.config;
+							
+							res1.statement = val1.statement;
+							res1.catch = (val1.catch) ? {catch: val1.catch} : null;
+							res1.finally = (val1.finally) ? {finally: val1.finally} : null;
+							
+							return res1;
+						},
+					},
+				},
+			},
+			{
+				production: {
+					block: {  //// tolerate unparsed in block
+						variant: true,
+						structure: [
+							["[p","statement"]
+						],
+						pattern: [
+							configToken(),["g","{","statement",[
+								["n"],
+									["i",+1],["*","statement",[
+										["p$","statement","statement"],["n"]
+									]],
+								["i",-1]
+							]]
+						],
+						parse: function(val1) {
+							var res1 = utils.clone(val1);
+							
+							res1.config = val1.config || {}; ////
+							
+							res1.statement = [];
+							utils.forList(val1.statement.statement,function(val2) {
+								res1.statement.push(parseExpression(val2.statement));
+							});
+							
+							return res1;
+						},
+						print: function(val1) {
+							var res1 = utils.clone(val1);
+							
+							res1.config = val1.config;
+							
+							res1.statement = {statement: []};
+							utils.forList(val1.statement,function(val2) {
+								res1.statement.statement.push({statement: printExpression(val2)});
+							});
+							
+							return res1;
 						},
 					},
 				},
@@ -548,64 +830,98 @@ function setup_grammar() {
 			{
 				production: {
 					var: {
+						structure: [
+							["[{","var",[
+								["p","name"],
+								["p","expression"]
+							]]
+						],
 						pattern: [
-							"var"," ",["+","var",[
+							configToken(),"var"," ",["+","var",[
 								configToken(),["|","var",{
 									property: [["p","property","var"]],
 									"=": [["p","=","var"]], // warning: variant xor iterate
 								}],["?","separator",[  // match last => unparsed
 									","," "
 								]]
-							]],";"
+							]],["?","separator",[  // print all
+								";"
+							]]
 						],
-						parse: function(print) {
-							var parse = JSON.parse(JSON.stringify(print));
-							parse.parsed = (!print.var.length || !print.var[print.var.length - 1].separator);
-							parse.var = [];
-							utils.forList(JSON.parse(JSON.stringify(print.var)),function(val) {
-								val.name = val.var.var;
-								val.expression = null;
-								if(val.var.production == "=") {
-									if(val.var.var.left.type == "property") {
-										val.name = val.var.var.left;
-										val.expression = parseParenthese(val.var.var.right);
+						parse: function(val1) {
+							var res1 = utils.clone(val1);
+							
+							res1.config = val1.config || {}; ////
+							
+							res1.parsed = (!val1.var.length
+								|| !val1.var[val1.var.length - 1].separator);
+							
+							res1.var = [];
+							utils.forList(val1.var,function(val2) {
+								var res2 = {};
+								
+								res2.name = val2.var.var;
+								res2.expression = null;
+								
+								if(val2.var.production == "=") {
+									if(val2.var.var.left.type == "property") {
+										res2.name = val2.var.var.left;
+										res2.expression = parseParenthese(val2.var.var.right);
 									}
 									else {
-										parse.parsed = false;
+										res1.parsed = false;
 									}
 								}
-								val.config.name = val.name.value;
-								delete val.separator;
-								parse.var.push(val);
+								
+								res2.config = val2.config || {}; ////
+								res2.config.name = res2.name.value;
+								
+								res1.var.push(res2);
 							});
-							return parse;
+							
+							delete res1.separator;
+							
+							return res1;
 						},
-						print: function(parse) {
-							var print = JSON.parse(JSON.stringify(parse));
-							print.var = [];
-							utils.forList(JSON.parse(JSON.stringify(parse.var)),function(val,i) {
-								val.var = {
+						print: function(val1) {
+							var res1 = utils.clone(val1);
+							
+							res1.config = val1.config;
+							
+							res1.var = [];
+							utils.forList(val1.var,function(val2,i) {
+								var res2 = {};
+								
+								res2.config = val2.config;
+								
+								res2.var = {
 									var: {
 										type: "property",
 										identifier: {
 											type: "identifier",
-											value: utils.makeIdentifier(parse.config.name),
+											value: utils.makeIdentifier(val2.config.name),
 										},
 									},
 								};
-								if(val.expression) {
-									val.var = {
+								res2.var.production = "property";
+								if(val2.expression) {
+									res2.var = {
 										var: {
 											type: "=",
-											left: val.var.var,
-											right: printParenthese(val.expression,"restore"),
+											left: res2.var.var,
+											right: printParenthese(val2.expression,"restore"),
 										},
 									};
+									res2.var.production = "=";
 								}
-								val.separator = (i < parse.step.length - 1);
-								print.var.push(val);
+								res2.separator = (i < val1.var.length - 1);
+								
+								res1.var.push(res2);
 							});
-							return print;
+							
+							res1.separator = true;
+							
+							return res1;
 						},
 					},
 				},
@@ -614,13 +930,27 @@ function setup_grammar() {
 				production: {
 					continue: {
 						pattern: [
-							"continue",";"
+							configToken(),"continue",["?","separator",[  // print all
+								";"
+							]]
 						],
-						parse: function(print) {
-							return JSON.parse(JSON.stringify(print));
+						parse: function(val1) {
+							var res1 = utils.clone(val1);
+							
+							res1.config = val1.config || {}; ////
+							
+							delete res1.separator;
+							
+							return res1;
 						},
-						print: function(parse) {
-							return JSON.parse(JSON.stringify(parse));
+						print: function(val1) {
+							var res1 = utils.clone(val1);
+							
+							res1.config = val1.config;
+							
+							res1.separator = true;
+							
+							return res1;
 						},
 					},
 				},
@@ -629,13 +959,27 @@ function setup_grammar() {
 				production: {
 					break: {
 						pattern: [
-							"break",";"
+							configToken(),"break",["?","separator",[  // print all
+								";"
+							]]
 						],
-						parse: function(print) {
-							return JSON.parse(JSON.stringify(print));
+						parse: function(val1) {
+							var res1 = utils.clone(val1);
+							
+							res1.config = val1.config || {}; ////
+							
+							delete res1.separator;
+							
+							return res1;
 						},
-						print: function(parse) {
-							return JSON.parse(JSON.stringify(parse));
+						print: function(val1) {
+							var res1 = utils.clone(val1);
+							
+							res1.config = val1.config;
+							
+							res1.separator = true;
+							
+							return res1;
 						},
 					},
 				},
@@ -644,13 +988,27 @@ function setup_grammar() {
 				production: {
 					return: {
 						pattern: [
-							"return",";"
+							configToken(),"return",["?","separator",[  // print all
+								";"
+							]]
 						],
-						parse: function(print) {
-							return JSON.parse(JSON.stringify(print));
+						parse: function(val1) {
+							var res1 = utils.clone(val1);
+							
+							res1.config = val1.config || {}; ////
+							
+							delete res1.separator;
+							
+							return res1;
 						},
-						print: function(parse) {
-							return JSON.parse(JSON.stringify(parse));
+						print: function(val1) {
+							var res1 = utils.clone(val1);
+							
+							res1.config = val1.config;
+							
+							res1.separator = true;
+							
+							return res1;
 						},
 					},
 				},
@@ -659,13 +1017,27 @@ function setup_grammar() {
 				production: {
 					throw: {
 						pattern: [
-							"throw",["e"," new Error()"],";"
+							configToken(),"throw",["e"," new Error()"],["?","separator",[  // print all
+								";"
+							]]
 						],
-						parse: function(print) {
-							return JSON.parse(JSON.stringify(print));
+						parse: function(val1) {
+							var res1 = utils.clone(val1);
+							
+							res1.config = val1.config || {}; ////
+							
+							delete res1.separator;
+							
+							return res1;
 						},
-						print: function(parse) {
-							return JSON.parse(JSON.stringify(parse));
+						print: function(val1) {
+							var res1 = utils.clone(val1);
+							
+							res1.config = val1.config;
+							
+							res1.separator = true;
+							
+							return res1;
 						},
 					},
 				},
@@ -673,18 +1045,28 @@ function setup_grammar() {
 			{
 				production: {
 					"expression;": {
+						variant: true,
 						pattern: [
-							["p","expression","expression"],";"
+							["p","expression","expression"],["?","separator",[  // print all
+								";"
+							]]
 						],
-						parse: function(print) {
-							var parse = JSON.parse(JSON.stringify(print));
-							parse.expression = parseParenthese(print.expression);
-							return parse;
+						parse: function(val1) {
+							var res1 = utils.clone(val1);
+							
+							res1.expression = parseParenthese(val1.expression);
+							
+							delete res1.separator;
+							
+							return res1;
 						},
-						print: function(parse) {
-							var print = JSON.parse(JSON.stringify(parse));
-							print.expression = printParenthese(parse.expression,"restore");
-							return print;
+						print: function(val1) {
+							var res1 = utils.clone(val1);
+							
+							res1.expression = printParenthese(val1.expression,"restore");
+							res1.separator = true;
+							
+							return res1;
 						},
 					},
 				},
@@ -695,28 +1077,41 @@ function setup_grammar() {
 				iterate: true,
 				production: {
 					"?": {
+						structure: [
+							["p","condition"],
+							["p","expression"],
+							["p","else"]
+						],
 						pattern: [
 							["p","expression","condition"]," ",configToken(),"?"," ",["p","expression","expression"]," ",":"," ",["p","expression","else"]
 						],
-						parse: function(print) {
-							var parse = JSON.parse(JSON.stringify(print));
-							parse.condition = parseParenthese(print.condition);
-							parse.expression = parseParenthese(print.expression);
-							parse.else = parseParenthese(print.else);
-							return parse;
+						parse: function(val1) {
+							var res1 = utils.clone(val1);
+							
+							res1.config = val1.config || {}; ////
+							
+							res1.condition = parseParenthese(val1.condition);
+							res1.expression = parseParenthese(val1.expression);
+							res1.else = parseParenthese(val1.else);
+							
+							return res1;
 						},
-						print: function(parse) {
-							var print = JSON.parse(JSON.stringify(parse));
-							print.condition = printParenthese(parse.condition,"group");
-							print.expression = printParenthese(parse.expression,"sequence",parse);
-							print.else = printParenthese(parse.else,"sequence",parse);
-							return print;
+						print: function(val1) {
+							var res1 = utils.clone(val1);
+							
+							res1.config = val1.config;
+							
+							res1.condition = printParenthese(val1.condition,"group");
+							res1.expression = printParenthese(val1.expression,"sequence",val1);
+							res1.else = printParenthese(val1.else,"sequence",val1);
+							
+							return res1;
 						},
 					},
 				},
 			},
-			genBinaryPattern(["=","*=","/=","%=","+=","-=","<<=",">>=",">>>=","&=","^=","|="],function(parse) {
-				return !!{".": true,"[": true,property: true}[parse.left.type];
+			genBinaryPattern(["=","*=","/=","%=","+=","-=","<<=",">>=",">>>=","&=","^=","|="],function(res3) {
+				return !!{".": true,"[": true,property: true}[res3.left.type];
 			}),
 			genBinaryPattern(["||"]),
 			genBinaryPattern(["&&"]),
@@ -728,50 +1123,80 @@ function setup_grammar() {
 			genBinaryPattern(["<<",">>",">>>"]),
 			genBinaryPattern([["a+b","+"],["a-b","-"]]),
 			genBinaryPattern(["*","/","%"]),
-			genPrefixPattern(["!","~",["++x","++"],["--x","--"]],function(parse) {
-				return !{"++x": true,"--x": true}[parse.type] || !!{".": true,"[": true,property: true}[parse.left.type];
+			genPrefixPattern(["!","~",["++x","++"],["--x","--"]],function(res3) {
+				return !{"++x": true,"--x": true}[res3.type] || !!{".": true,"[": true,property: true}[res3.left.type];
 			}),
-			genPostfixPattern([["x++","++"],["x--","--"]],function(parse) {
-				return !!{".": true,"[": true,property: true}[parse.left.type];
+			genPostfixPattern([["x++","++"],["x--","--"]],function(res3) {
+				return !!{".": true,"[": true,property: true}[res3.left.type];
 			}),
 			{
 				iterate: true,
 				production: {
 					".": {
+						structure: [
+							["p","expression"],
+							["p","key"]
+						],
 						pattern: [
 							["p","expression","expression"],configToken(),".",["p","identifier","key"]
 						],
-						parse: function(print) {
-							var parse = JSON.parse(JSON.stringify(print));
-							parse.expression = parseParenthese(print.expression);
-							return parse;
+						parse: function(val1) {
+							var res1 = utils.clone(val1);
+							
+							res1.config = val1.config || {}; ////
+							
+							res1.expression = parseParenthese(val1.expression);
+							res1.key = val1.key;
+							
+							return res1;
 						},
-						print: function(parse) {
-							var print = JSON.parse(JSON.stringify(parse));
-							print.expression = printParenthese(parse.expression,"sequence",parse);
-							return print;
+						print: function(val1) {
+							var res1 = utils.clone(val1);
+							
+							res1.config = val1.config;
+							
+							res1.expression = printParenthese(val1.expression,"sequence",val1);
+							res1.key = val1.key;
+							
+							return res1;
 						},
 					},
 					"[": {
+						structure: [
+							["p","expression"],
+							["p","key"]
+						],
 						pattern: [
 							["p","expression","expression"],configToken(),["g","[","key",[
 								["p","expression","key"]
 							]]
 						],
-						parse: function(print) {
-							var parse = JSON.parse(JSON.stringify(print));
-							parse.expression = parseParenthese(print.expression);
-							parse.key = parseParenthese(print.key.key);
-							return parse;
+						parse: function(val1) {
+							var res1 = utils.clone(val1);
+							
+							res1.config = val1.config || {}; ////
+							
+							res1.expression = parseParenthese(val1.expression);
+							res1.key = parseParenthese(val1.key.key);
+							
+							return res1;
 						},
-						print: function(parse) {
-							var print = JSON.parse(JSON.stringify(parse));
-							print.expression = printParenthese(parse.expression,"sequence",parse);
-							print.key = {key: printParenthese(parse.key,"restore")};
-							return print;
+						print: function(val1) {
+							var res1 = utils.clone(val1);
+							
+							res1.config = val1.config;
+							
+							res1.expression = printParenthese(val1.expression,"sequence",val1);
+							res1.key = {key: printParenthese(val1.key,"restore")};
+							
+							return res1;
 						},
 					},
 					invocation: {
+						structure: [
+							["p","expression"],
+							["[p","parameter"]
+						],
 						pattern: [
 							["p","expression","expression"],configToken()," ",["g","(","parameter",[
 								["*","parameter",[
@@ -781,29 +1206,47 @@ function setup_grammar() {
 								]]
 							]]
 						],
-						parse: function(print) {
-							var parse = JSON.parse(JSON.stringify(print));
-							parse.parsed = (!print.parameter.parameter.length
-								|| !print.parameter.parameter[print.parameter.parameter.length - 1].separator);
-							parse.expression = parseParenthese(print.expression);
-							parse.parameter = [];
-							utils.forList(JSON.parse(JSON.stringify(print.parameter.parameter)),function(val) {
-								val.parameter = parseParenthese(val.parameter);
-								delete val.separator;
-								parse.parameter.push(val);
+						parse: function(val1) {
+							var res1 = utils.clone(val1);
+							
+							res1.config = val1.config || {}; ////
+							
+							res1.parsed = (!val1.parameter.parameter.length
+								|| !val1.parameter.parameter[val1.parameter.parameter.length - 1].separator);
+							
+							res1.expression = parseParenthese(val1.expression);
+							
+							res1.parameter = [];
+							utils.forList(val1.parameter.parameter,function(val2) {
+								var res2 = parseParenthese(val2.parameter);
+								
+								res2.config = val2.config || {}; ////
+								
+								res1.parameter.push(res2);
 							});
-							return parse;
+							
+							return res1;
 						},
-						print: function(parse) {
-							var print = JSON.parse(JSON.stringify(parse));
-							print.expression = printParenthese(parse.expression,"sequence",parse);
-							print.parameter = {parameter: []};
-							utils.forList(JSON.parse(JSON.stringify(parse.parameter)),function(val,i) {
-								val.parameter = printParenthese(val.parameter,"restore");
-								val.separator = (i < parse.parameter.length - 1);
-								print.parameter.parameter.push(val);
+						print: function(val1) {
+							var res1 = utils.clone(val1);
+							
+							res1.config = val1.config;
+							
+							res1.expression = printParenthese(val1.expression,"sequence",val1);
+							
+							res1.parameter = {parameter: []};
+							utils.forList(val1.parameter,function(val2,i) {
+								var res2 = {};
+								
+								res2.config = val2.config;
+								
+								res2.parameter = printParenthese(val2,"restore");
+								res2.separator = (i < val1.parameter.length - 1);
+								
+								res1.parameter.parameter.push(res2);
 							});
-							return print;
+							
+							return res1;
 						},
 					},
 				},
@@ -812,6 +1255,12 @@ function setup_grammar() {
 				production: {
 					map: {
 						variant: true,
+						structure: [
+							["[{","entry",[
+								["p","key"],
+								["p","entry"]
+							]]
+						],
 						pattern: [
 							configToken(),["g","{","entry",[
 								["n"],
@@ -827,28 +1276,41 @@ function setup_grammar() {
 								["i",-1]
 							]]
 						],
-						parse: function(print) {
-							var parse = JSON.parse(JSON.stringify(print));
-							parse.entry = [];
-							utils.forList(JSON.parse(JSON.stringify(print.entry.entry)),function(val) {
-								val.key = val.key.key;
-								val.entry = parseParenthese(val.entry);
-								delete val.separator;
-								parse.entry.push(val);
+						parse: function(val1) {
+							var res1 = utils.clone(val1);
+							
+							res1.config = val1.config || {}; ////
+							
+							res1.entry = [];
+							utils.forList(val1.entry.entry,function(val2) {
+								var res2 = {};
+								
+								res2.key = val2.key.key;
+								res2.entry = parseParenthese(val2.entry);
+								
+								res1.entry.push(res2);
 							});
-							return parse;
+							
+							return res1;
 						},
-						print: function(parse) {
-							var print = JSON.parse(JSON.stringify(parse));
-							print.entry = {entry: []};
-							utils.forList(JSON.parse(JSON.stringify(parse.entry)),function(val) {
-								val.production = val.key.type;
-								val.key = {key: val.key};
-								val.entry = printParenthese(val.entry,"restore");
-								val.separator = true;
-								print.entry.entry.push(val);
+						print: function(val1) {
+							var res1 = utils.clone(val1);
+							
+							res1.config = val1.config;
+							
+							res1.entry = {entry: []};
+							utils.forList(val1.entry,function(val2) {
+								var res2 = {};
+								
+								res2.key = {key: val2.key};
+								res2.key.production = val2.key.type;
+								res2.entry = printParenthese(val2.entry,"restore");
+								res2.separator = true;
+								
+								res1.entry.entry.push(res2);
 							});
-							return print;
+							
+							return res1;
 						},
 					},
 				},
@@ -857,6 +1319,9 @@ function setup_grammar() {
 				production: {
 					list: {
 						variant: true,
+						structure: [
+							["[p","entry"]
+						],
 						pattern: [
 							configToken(),["g","[","entry",[
 								["n"],
@@ -868,26 +1333,37 @@ function setup_grammar() {
 								["i",-1]
 							]]
 						],
-						parse: function(print) {
-							var parse = JSON.parse(JSON.stringify(print));
-							parse.parsed = (!print.entry.entry.length
-								|| !print.entry.entry[print.entry.entry.length - 1].separator);
-							parse.entry = [];
-							utils.forList(JSON.parse(JSON.stringify(print.entry.entry)),function(val) {
-								val = parseParenthese(val.entry);
-								parse.entry.push(val);
+						parse: function(val1) {
+							var res1 = utils.clone(val1);
+							
+							res1.config = val1.config || {}; ////
+							
+							res1.parsed = (!val1.entry.entry.length
+								|| !val1.entry.entry[val1.entry.entry.length - 1].separator);
+							
+							res1.entry = [];
+							utils.forList(val1.entry.entry,function(val2) {
+								res1.entry.push(parseParenthese(val2.entry));
 							});
-							return parse;
+							
+							return res1;
 						},
-						print: function(parse) {
-							var print = JSON.parse(JSON.stringify(parse));
-							print.entry = {entry: []};
-							utils.forList(JSON.parse(JSON.stringify(parse.entry)),function(val,i) {
-								val = {entry: printParenthese(val,"restore")};
-								val.separator = (i < parse.entry.length - 1);
-								print.entry.entry.push(val);
+						print: function(val1) {
+							var res1 = utils.clone(val1);
+							
+							res1.config = val1.config;
+							
+							res1.entry = {entry: []};
+							utils.forList(val1.entry,function(val2,i) {
+								var res2 = {};
+								
+								res2.entry = printParenthese(val2,"restore");
+								res2.separator = (i < val1.entry.length - 1);
+								
+								res1.entry.entry.push(res2);
 							});
-							return print;
+							
+							return res1;
 						},
 					},
 				},
@@ -897,19 +1373,23 @@ function setup_grammar() {
 					parenthese: {
 						variant: true,
 						pattern: [
-							configToken(),["g","(","expression",[
+							["g","(","expression",[
 								["p","expression","expression"]
 							]]
 						],
-						parse: function(print) {
-							var parse = JSON.parse(JSON.stringify(print));
-							parse.expression = print.expression.expression;
-							return parse;
+						parse: function(val1) {
+							var res1 = utils.clone(val1);
+							
+							res1.expression = val1.expression.expression;
+							
+							return res1;
 						},
-						print: function(parse) {
-							var print = JSON.parse(JSON.stringify(parse));
-							print.expression = {expression: parse.expression};
-							return print;
+						print: function(val1) {
+							var res1 = utils.clone(val1);
+							
+							res1.expression = {expression: val1.expression};
+							
+							return res1;
 						},
 					},
 				},
@@ -917,20 +1397,31 @@ function setup_grammar() {
 			{
 				production: {
 					typeof: {
+						structure: [
+							["p","expression"]
+						],
 						pattern: [
 							configToken(),"typeof",["g","(","expression",[
 								["p","expression","expression"]
 							]]
 						],
-						parse: function(print) {
-							var parse = JSON.parse(JSON.stringify(print));
-							parse.expression = parseParenthese(print.expression.expression);
-							return parse;
+						parse: function(val1) {
+							var res1 = utils.clone(val1);
+							
+							res1.config = val1.config || {}; ////
+							
+							res1.expression = parseParenthese(val1.expression.expression);
+							
+							return res1;
 						},
-						print: function(parse) {
-							var print = JSON.parse(JSON.stringify(parse));
-							print.expression = {expression: printParenthese(parse.expression,"group")};
-							return print;
+						print: function(val1) {
+							var res1 = utils.clone(val1);
+							
+							res1.config = val1.config;
+							
+							res1.expression = {expression: printParenthese(val1.expression,"group")};
+							
+							return res1;
 						},
 					},
 				},
@@ -942,15 +1433,23 @@ function setup_grammar() {
 						pattern: [
 							["p","identifier","identifier"]
 						],
-						parse: function(print) {
-							var parse = JSON.parse(JSON.stringify(print));
-							parse.parsed = !grammar.reserved[print.identifier.value];
-							return parse;
+						parse: function(val1) {
+							var res1 = utils.clone(val1);
+							
+							res1.parsed = !grammar.reserved[val1.identifier.value];
+							
+							res1.identifier = val1.identifier;
+							
+							return res1;
 						},
-						print: function(parse) {
-							return JSON.parse(JSON.stringify(parse));
+						print: function(val1) {
+							var res1 = utils.clone(val1);
+							
+							res1.identifier = val1.identifier;
+							
+							return res1;
 						},
-						extract: function(parse) { ////
+						extract: function(val1) { ////
 						},
 					},
 				},
@@ -968,20 +1467,25 @@ function setup_grammar() {
 								false: ["false"],
 							}]
 						],
-						parse: function(print) {
-							var parse = JSON.parse(JSON.stringify(print));
-							parse.production = print.literal.production;
-							parse.value = (print.literal.literal) ? print.literal.literal.value : print.literal.production;
-							delete parse.literal;
-							return parse;
+						parse: function(val1) {
+							var res1 = utils.clone(val1);
+							
+							res1.production = val1.literal.production;
+							res1.value = (val1.literal.literal) ? val1.literal.literal.value : val1.literal.production;
+							
+							delete res1.literal;
+							
+							return res1;
 						},
-						print: function(parse) {
-							var print = JSON.parse(JSON.stringify(parse));
-							print.literal = {literal: parse.value || null};
-							print.literal.production = parse.production;
-							return print;
+						print: function(val1) {
+							var res1 = utils.clone(val1);
+							
+							res1.literal = {literal: val1.value || null};
+							res1.literal.production = val1.production;
+							
+							return res1;
 						},
-						extract: function(parse) { ////
+						extract: function(val1) { ////
 						},
 					},
 				},
@@ -994,6 +1498,29 @@ function setup_grammar() {
 			//// "@",["g","{",[]] ////
 		],
 		token: {
+			number: {
+				pattern: [
+					["|",[
+						[  // 0x012F
+							"0x",
+							["+",[
+								["c",[[0x0030,0x0039],[0x0041,0x0046]]]
+							]]
+						],
+						[  // 12.34  //// execute: trim to prevent octal interpretation
+							["+",[
+								["c",[[0x0030,0x0039]]]
+							]],
+							["?",[
+								".",
+								["+",[
+									["c",[[0x0030,0x0039]]]
+								]]
+							]]
+						]
+					]]
+				],
+			},
 			punctuator: {
 				pattern: [
 					["|",[
@@ -1001,22 +1528,23 @@ function setup_grammar() {
 						["{"],["}"],["("],[")"],["["],["]"],  // group: map, list, parenthese
 						[";"],[","],[":"],
 						["?"],
-						["="],["*="],["/="],["%="],["+="],["-="],["<<="],[">>="],[">>>="],["&="],["^="],["|="],
+						["*="],["/="],["%="],["+="],["-="],["<<="],[">>="],[">>>="],["&="],["^="],["|="],
 						["||"],
 						["&&"],
 						["|"],
 						["^"],
 						["&"],
-						["=="],["==="],["!="],["!=="],
-						["<"],["<="],[">"],[">="],
-						["<<"],[">>"],[">>>"],
-						["+"],["-"],  // a+b, a-b
+						["!=="],["!="],["==="],["=="],
+						["<<"],[">>>"],[">>"],
+						["<="],["<"],[">="],[">"],
 						["*"],["/"],["%"],
 						["!"],["~"],["++"],["--"],  // ++x, --x  // -a => (0 - a)
 						// ["++"],["--"],  // x++, x--
-						["."]  // [], invocation
+						["."],  // [], invocation
 						// typeof
 						// property, literal: string, number, null, true, false
+						["="],
+						["+"],["-"]  // a+b, a-b
 					]]
 				],
 			},
@@ -1049,29 +1577,6 @@ function setup_grammar() {
 								]]
 							]],"\'"
 						]*/
-					]]
-				],
-			},
-			number: {
-				pattern: [
-					["|",[
-						[  // 0x012F
-							"0x",
-							["+",[
-								["c",[[0x0030,0x0039],[0x0041,0x0046]]]
-							]]
-						],
-						[  // 12.34  //// execute: trim to prevent octal interpretation
-							["+",[
-								["c",[[0x0030,0x0039]]]
-							]],
-							["?",[
-								".",
-								["+",[
-									["c",[[0x0030,0x0039]]]
-								]]
-							]]
-						]
 					]]
 				],
 			},
@@ -1111,9 +1616,6 @@ function setup_grammar() {
 				"expression;": true,
 			},
 			expression: {
-				map: true,
-				list: true,
-				parenthese: true,
 				"?": true,
 				"=": true,
 				"*=": true,
@@ -1157,6 +1659,9 @@ function setup_grammar() {
 				".": true,
 				"[": true,
 				invocation: true,
+				map: true,
+				list: true,
+				parenthese: true,
 				typeof: true,
 				property: true,
 				literal: true,
@@ -1225,7 +1730,6 @@ function setup_grammar() {
 			//"undefined"
 		},
 		short: {
-			project: "p",
 			package: "pk",
 			class: "cls",
 			function: "fun",
@@ -1234,9 +1738,12 @@ function setup_grammar() {
 			while: "whl",
 			"for in": "fin",
 			list: "lst",
-			parenthese: "par",
 			invocation: "inv",
+			parenthese: "par",
 			typeof: "tof",
+			property: "pro",
+			literal: "lit",
+			identifier: "ident",
 			
 			//// property naming: 
 			//// literal naming: string, number, null, true, false
@@ -1249,8 +1756,8 @@ function setup_grammar() {
 			else: "el",
 			catch: "cat",
 			finally: "fly",
-			left: "lt",
-			right: "rt",
+			left: "lef",
+			right: "rig",
 			parameter: "par",
 		},
 		

@@ -188,5 +188,46 @@ Es gibt nur Kanten von oben nach unten. Hängt ein Zwischenwert (indirekt) von s
 
 Die Analyse des Datenflusses hängt von der Analyse des Kontrollflusses ab, da unterschiedliche Kontrollpfade auch unterschiedliche Datenflüsse haben können. Die Analyse des Kontrollflusses ist allerdings nicht exakt, somit sind auch alle Angaben im Datenflussdiagramm entweder gewiss oder ungewiss. Für manche ungewisse Angaben kann ein Wertebereich angegeben werden.
 
+
+
+/*
+
+
+
+editor:
+estimated value range or explicit value according to explicit input parameters
+in the entry point parameters can also given value ranges or be completely variable
+
+affecting control flow
+
+affecting values (data flow) and values it depends on
+
+
+complexity
+(dsa)
+
+
+
+
+code transformation:
+iterate over the code tree.
+match rules, edit tree
+
+e.g. translate custom nodes to executable
+synchronize multiple parts of code or data definition
+
+iteration over custom nodes or data can be used to completely generate code
+can contain parts of explicitly specified code
+
+parallelization
+
+
+custom instructions,
+tree query and transform,
+build tree programmatically (gen)
+
+*/
+
+
 </body>
 </html>
