@@ -74,7 +74,7 @@ function setup_main() {
 		storage: {
 			menu: "Projekt",
 			left: {
-				panel: "left_loadedprojects",
+				panel: "left_structure",
 				size: 0,
 			},
 			edit: {
@@ -181,7 +181,7 @@ function setup_main() {
 			
 			
 			if(!main.storage.edit.html) ////
-				main.storage.edit.html = {gecko: "<br />",webkit: "<div></div>",trident: "<p></p>",unknown: "<br />"}[main.agent];
+				main.storage.edit.html = utils.escapeHtml(sampleproject.test).replace(/\n/g,{gecko: "<br />",webkit: "<div></div>",trident: "<p></p>",unknown: "<br />"}[main.agent]);
 			main.node.code.innerHTML = main.storage.edit.html;  //// do not store edit
 			/*try {
 				if(main.storage.edit.select) { //// do this after initial compile !
@@ -239,7 +239,7 @@ function setup_main() {
 			main.node[dest].parentNode.style.height = main.node[dest].parentNode.style.maxHeight = h;
 		},
 		listEntry: function(content,style,onclick) {
-			return "<td style=\"" + (style || "") + "\"" + ((onclick) ? " onmouseover=\"style.backgroundColor = '#24c';\" onmouseout=\"style.backgroundColor = null;\" onclick=\"style.backgroundColor = null; " + onclick + "\"" : "") + ">&ensp;" + content + "&ensp;</td>";
+			return "<td style=\"" + (style || "") + "\"" + ((onclick) ? " onmouseenter=\"style.backgroundColor = '#24c';\" onmouseleave=\"style.backgroundColor = null;\" onclick=\"style.backgroundColor = null; " + onclick + "\"" : "") + ">&ensp;" + content + "&ensp;</td>";
 		},
 		setMenu: function(key1) {
 			main.storage.menu = key1;

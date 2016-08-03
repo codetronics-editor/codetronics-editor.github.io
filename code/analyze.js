@@ -21,7 +21,7 @@ function setup_analyze() {
 				worker.session.analyze.structure = [];
 				analyze.walkParsed({top: worker.session.analyze.parse},["[p","top"],null,"",null,"structure",0);
 		
-				console.log(worker.session.analyze.structure);
+				//console.log(worker.session.analyze.structure);
 			
 				/*
 				&lt;p&gt;<span style="color:#f0f;">(XYZ)</span>
@@ -36,7 +36,7 @@ function setup_analyze() {
 				throw ex; ////
 			}
 		},
-		walkParsed: function(val1,structure1,htmlname1,htmlpath,visibleRoot1,type,indent) {console.log(val1,structure1,htmlname1,htmlpath,visibleRoot1,type,indent);
+		walkParsed: function(val1,structure1,htmlname1,htmlpath,visibleRoot1,type,indent) {//console.log(val1,structure1,htmlname1,htmlpath,visibleRoot1,type,indent);
 			if(type == "production") {
 				// variant flag & skip
 				//delete val1.parsed; ////
@@ -47,7 +47,7 @@ function setup_analyze() {
 				if(val1.config)
 					val1.config.id = val1.config.id || analyze.incNextId();
 				
-				if(!val1.config) console.log("no config " + val1.type);
+				//if(!val1.config) console.log("no config " + val1.type);
 				
 				
 				htmlname1 += "&lt;" + utils.escapeHtml((val1.parsed) ? (grammar.short[val1.type] || val1.type) : "unparsed") + "&gt;";
@@ -79,7 +79,7 @@ function setup_analyze() {
 				});
 			}
 			if(type == "structure") {
-				var val2 = val1[structure1[1]];console.log(val1,structure1[1],val2);
+				var val2 = val1[structure1[1]];//console.log(val1,structure1[1],val2);
 				if(!val2)
 					return;
 			
@@ -100,7 +100,7 @@ function setup_analyze() {
 					var showUnparsed = true; // condense successive unparsed tokens
 				
 					utils.forList(val2,function(val3,i) {
-						if(val3.parsed || showUnparsed) {console.log(val3.type,grammar.production[val3.type]);
+						if(val3.parsed || showUnparsed) {//console.log(val3.type,grammar.production[val3.type]);
 							var structure2 = (val3.parsed && grammar.production[val3.type]) ? grammar.production[val3.type][0].structure : null;
 							var visibleRoot2 = (val3.parsed && val3.config && val3.config.id) ? val3.config.id.join("_") : null;
 							analyze.walkParsed(val3,structure2,htmlname2 + i,htmlpath,visibleRoot2,"production",indent + 1);
