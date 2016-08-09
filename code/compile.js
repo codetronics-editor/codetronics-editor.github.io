@@ -22,8 +22,6 @@ function setup_compile() {
 				pattern[0] += ")";
 			});
 			compile.regexp = new RegExp(pattern[0],"g");
-			
-			//console.log(compile.regexp);
 		},
 		buildRegexp: function(pattern,list) {
 			pattern[0] += "(?:";
@@ -39,18 +37,22 @@ function setup_compile() {
 							pattern[0] += "-\\u" + unicode2.substr(unicode2.length - 4);
 						});
 						pattern[0] += "]";
+						
 						break;
 					case "?":
 						compile.buildRegexp(pattern,val1[1]);
 						pattern[0] += "?";
+						
 						break;
 					case "*":
 						compile.buildRegexp(pattern,val1[1]);
 						pattern[0] += "*";
+						
 						break;
 					case "+":
 						compile.buildRegexp(pattern,val1[1]);
 						pattern[0] += "+";
+						
 						break;
 					case "|":
 						utils.forList(val1[1],function(val2,i) {
@@ -58,6 +60,7 @@ function setup_compile() {
 								pattern[0] += "|";
 							compile.buildRegexp(pattern,val2);
 						});
+						
 						break;
 					}
 				}
@@ -68,7 +71,7 @@ function setup_compile() {
 			pattern[0] += ")";
 		},
 		run: function() {
-			compile.passCtr++;
+			++compile.passCtr;
 			console.log("compile pass " + compile.passCtr + " started at " + new Date());
 			
 			try {
@@ -89,9 +92,13 @@ function setup_compile() {
 				compile.prepareParse(token1,token2,groupnode);
 				compile.performParse(groupnode);
 				
+				// remove variant
+				utils.forList(groupnode,function(val1) { //// cloned, already removed
+					compile.removeVariant(val1[0].token);
+				});
+				
 				worker.session.analyze.parse = token1;
 				
-				//// analyze: walk parse tree, remove variant token & flag
 				//// update visible subtree
 				//// print & format visible subtree
 				
@@ -99,10 +106,6 @@ function setup_compile() {
 				
 				//// update tree in analyze
 				worker.session.compile.visibleRoot = ;
-				
-				//// format html in analyze
-				var print4 = compile.print(parse4);
-				worker.session.compile.outputText = print4;
 				
 				*/
 				
@@ -125,6 +128,15 @@ function setup_compile() {
 			//// restore selection
 			
 			//// do not update editor if edited (compile again)
+		},
+		removeVariant: function(token) {
+			for(var p = token.length - 1; p >= 0; --p) {
+				var val2 = token[p];
+				delete val2.skip;
+				if(val2.variant) {
+					token.splice(p,1);
+				}
+			}
 		},
 		tokenize: function(src,token1,token2) {  // use regex api
 			compile.regexp.lastIndex = 0;
@@ -154,9 +166,14 @@ function setup_compile() {
 						select[1] = [worker.session.compile.inputSelect[1] - match.index];
 					}
 				}
+				if(type == "identifier"
+				&& (grammar.reserved[match[0]] || match[0] == "prototype" || match[0] == "__proto__")) {
+					type = "reserved";
+				}
 				if(type != "whitespace") {
 					var val = {
 						parsed: true,
+						terminal: true,
 						type: type,
 						value: match[0],
 					};
@@ -179,14 +196,7 @@ function setup_compile() {
 		tokenToString: function(token) {
 			var string = "";
 			utils.forList(token,function(val) {
-				if(val.type == "group") {
-					string += val.delimiter;
-					string += compile.tokenToString(val.token);
-					string += grammar.group[val.delimiter][1];
-				}
-				else {
-					string += val.value;
-				}
+				string += val.value;
 				string += " ";
 			});
 			return string;
@@ -194,7 +204,7 @@ function setup_compile() {
 		printTokenTree: function(token,indent) { ////
 			var string = "";
 			var keys = [];
-			utils.forList(["parsed","type","delimiter","production","token","value","parenthese","skip","variant","config"],function(key) {
+			utils.forList(["parsed","terminal","type","delimiter","production","token","value","parenthese","skip","variant","config"],function(key) {
 				if(token[key])
 					keys.push(key);
 			});
@@ -217,9 +227,6 @@ function setup_compile() {
 			
 			//// select
 			
-			//console.log(token2.join(";"));
-			//console.log(JSON.stringify(token1));
-			
 			// find all occurrences of opening and closing group delimiters
 			var delimiter = [[],[],[]];
 			utils.forUpto(2,function(i) {
@@ -231,13 +238,16 @@ function setup_compile() {
 						);
 						if(next == -1)
 							break;
-						delimiter[2].push([next,i,delimiter[i].length]);
+						delimiter[2].push([next,i]);
 						delimiter[i].push(next);
 					}
 				});
 				delimiter[i].sort(function(a,b) {
 					return a - b;
 				});
+			});
+			utils.forList(delimiter[2],function(val) {
+				val[2] = delimiter[val[1]].indexOf(val[0]);
 			});
 			delimiter[2].sort(function(a,b) {
 				return a[0] - b[0];
@@ -272,6 +282,7 @@ function setup_compile() {
 							
 							token1[delimiter[2][p][0] - 1] = {
 								parsed: true,
+								terminal: true,
 								type: "config",
 								value: json,
 							};
@@ -340,23 +351,24 @@ function setup_compile() {
 				return b[1] - a[1];
 			});
 		},
-		performParse: function(groupnode) {  // simple bottom-up ll-parser with operator precedence
+		performParse: function(groupnode) {  // simple bottom-up LR-parser
 			// warning: variant xor iterate
 			
 			// apply production rules
 			utils.forList(groupnode,function(val1) {  // iterate all groups bottom up
+				var token = val1[0].token;
 				utils.forListRev(grammar.sequence,function(val2,i) {  // iterate production rule sequence
 					var pattern = grammar.pattern[i];
-					for(var p = (val2.iterate) ? 3 * val1[0].token.length : 1; p; --p) {  // limit sequence step iterations
+					for(var p = (val2.iterate) ? 3 * token.length : 1; p; --p) {  // limit sequence step iterations
 						// sufficient for max. one 1->1 production per n->1 production
 						
 						var complete = true;
-						for(var q = 0; q < val1[0].token.length; ++q) {  // iterate group tokens
+						for(var q = 0; q < token.length; ++q) {  // iterate group tokens
 							
 							// test pattern, contains all production rules of this sequence step
-							var match1 = compile.matchProduction(val1[0].token,q,pattern);
+							var match1 = compile.matchProduction(token,q,pattern);
 							
-							if(match1) {//console.log("a",q,match1);
+							if(match1) {
 								var skip = match1.skip;
 								var match2 = match1.production;
 								match2.parsed = true;
@@ -372,7 +384,7 @@ function setup_compile() {
 								if(match2.parsed) {
 									complete = false;
 									
-									val1[0].token.splice(q,(match2.variant) ? 0 : match2.skip,match2); ////
+									token.splice(q,(match2.variant) ? 0 : match2.skip,match2); ////
 										
 									q += (match2.variant) ? match2.skip : 0;
 								}
@@ -399,24 +411,16 @@ function setup_compile() {
 			
 			
 		},
-		// 68 production rules
-		logCount1: 0,
+		logCount1: 0, ////
 		logCount2: 0,
 		matchProduction: function(token3,q,pattern) { compile.logCount1++;
 			var match1 = null;
 			
 			//// select
 			
-			//console.log(compile.logCount1,token3,q,pattern);
-			//console.log(compile.logCount1,q,JSON.stringify(pattern));
-			
 			var r = 0;
 			var s = 0;
 			for(; r < pattern.length && q + s < token3.length; ++r) { compile.logCount2++;
-				
-				/*if(r >= 0 && pattern == grammar.production.for[0].pattern[2][3]) {
-					console.log(r,q,s,pattern,token3,compile.logCount1,compile.logCount2);
-				}*/
 				
 				var val3 = token3[q + s];
 				var val4 = pattern[r];
@@ -433,16 +437,22 @@ function setup_compile() {
 						if(val3.parsed && (val3.type == val4[1]
 						|| (grammar.categorize[val4[1]] && grammar.categorize[val4[1]][val3.type]))) {
 							match1[val4[2]] = utils.clone(val3);
+							delete match1[val4[2]].variant;
+							delete match1[val4[2]].skip;
 							s += (val3.variant) ? (val3.skip + 1) : 1;
 						}
-						else if(val3.parsed && val3.variant) {
+						else if(val3.variant) {
 							--r;
 							++s;
 							continue;
 						}
-						else if(val4[0] == "p$") { ////
+						else if(val4[0] == "p$" && (!val3.parsed || val3.type != "reserved" || !val4[3] || !val4[3][val3.value])) { ////
 							match1[val4[2]] = utils.clone(val3);
 							match1[val4[2]].unparsed = true;
+							delete match1[val4[2]].skip;
+							if(match1[val4[2]].type == "group") {
+								compile.removeVariant(match1[val4[2]].token);
+							}
 							++s;
 						}
 						else {
@@ -451,10 +461,8 @@ function setup_compile() {
 						
 						break;
 					case "g":
-						if(!val3.parsed && val3.type == "group" && val3.delimiter == val4[1]) {
+						if(val3.type == "group" && val3.delimiter == val4[1]) {
 							var match2 = compile.matchProduction(val3.token,0,val4[3]);
-							
-							//if(val3.delimiter == "(")console.log(!!match2,/*match2.skip,*/val3.token.length,val3.token,0,val4[3]);
 							
 							if(match2 && match2.skip == val3.token.length) {
 								match1[val4[2]] = match2;
@@ -464,7 +472,7 @@ function setup_compile() {
 								return null;
 							}
 						}
-						else if(val3.parsed && val3.variant) {
+						else if(val3.variant) {
 							--r;
 							++s;
 							continue;
@@ -514,15 +522,16 @@ function setup_compile() {
 						
 						break;
 					case "|":
-					case "|$":
 						utils.forMap(val4[2],function(val5,key5) {
 							var match2 = compile.matchProduction(token3,q + s,val5);
 						
 							if(match2) {
 								if(match1[val4[1]]) {
-									console.log("parser: ambiguous production rule found",token3,q + s,val5,match2,match1[val4[1]]); ////
+									if(!val5[0] || val5[0][0] != "p$") {
+										console.log("parser: ambiguous production rule found",token3,q + s,val5,match2,match1[val4[1]]); ////
 						
-									//throw new Error();
+										//throw new Error();
+									}
 								}
 								else {
 									match2.production = key5;
@@ -534,18 +543,6 @@ function setup_compile() {
 						if(match1[val4[1]]) {
 							s += match1[val4[1]].skip;
 						}
-						else if(val4[0] == "|$") { ////
-							if(val3.parsed && val3.variant) {
-								--r;
-								++s;
-								continue;
-							}
-							else {
-								match1[val4[2]] = utils.clone(val3);
-								match1[val4[2]].unparsed = true;
-								++s;
-							}
-						}
 						else {
 							return null;
 						}
@@ -554,10 +551,10 @@ function setup_compile() {
 					}
 				}
 				else {
-					if(val3.parsed && (val3.type == "punctuator" || val3.type == "identifier") && val3.value == val4) {
+					if((val3.type == "punctuator" || val3.type == "reserved") && val3.value == val4) {
 						++s;
 					}
-					else if(val3.parsed && val3.variant) {
+					else if(val3.variant) {
 						--r;
 						++s;
 						continue;
@@ -584,7 +581,6 @@ function setup_compile() {
 					case "g":
 					case "+":
 					case "|":
-					case "|$":
 						return null;
 					
 					case "?":
@@ -604,10 +600,6 @@ function setup_compile() {
 			if(match1) {
 				match1.skip = s;
 			}
-				
-			/*if(r >= 2 && pattern == grammar.production.if[0].pattern) {
-				console.log("====");
-			}*/
 			
 			return match1;
 		},

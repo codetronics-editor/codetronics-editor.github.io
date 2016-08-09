@@ -25,6 +25,8 @@ function setup_main() {
 			"edit_behavior": null,
 			"edit_dataflow": null,
 			"edit_valuerange": null,
+			"edit_noproject": null,
+			"edit_notab": null,
 		},
 		noproject: {
 			"left_keys": true,
@@ -89,6 +91,7 @@ function setup_main() {
 				current: null,
 			}
 		},
+		storageBackup: null,
 		agent: "unknown",
 		worker: null,
 		workerMessage: null,
@@ -137,11 +140,11 @@ function setup_main() {
 			case "gecko": // 47.0 -> 47.0
 				try {version = parseInt(navigator.userAgent.match(/firefox\/(\d+)/i)[1]);} catch(ex) {}
 				try {version = parseInt(navigator.userAgent.match(/ rv:\/(\d+)/i)[1]);} catch(ex) {}
-				console.log(version);
 				if(version >= 47)
 					main.node.browser.innerHTML = "FIREFOX ERKANNT:&emsp;<span style=\"color:green;\">OK</span>";
 				else
 					main.node.browser.innerHTML = "ALTEN FIREFOX ERKANNT:&emsp;<span style=\"color:red;\">NICHT GETESTET</span>";
+				
 				break;
 			case "webkit": // 51.0 -> 537.36
 				try {version = parseInt(navigator.userAgent.match(/webkit\/(\d+)/i)[1]);} catch(ex) {}
@@ -149,6 +152,7 @@ function setup_main() {
 					main.node.browser.innerHTML = "CHROME/SAFARI ERKANNT:&emsp;<span style=\"color:green;\">OK</span>";
 				else
 					main.node.browser.innerHTML = "ALTEN CHROME/SAFARI ERKANNT:&emsp;<span style=\"color:red;\">NICHT GETESTET</span>";
+				
 				break;
 			case "trident": // 11.0 -> 7.0
 				try {version = parseInt(navigator.userAgent.match(/trident\/(\d+)/i)[1]);} catch(ex) {}
@@ -156,13 +160,17 @@ function setup_main() {
 					main.node.browser.innerHTML = "INTERNET EXPLORER ERKANNT:&emsp;<span style=\"color:green;\">OK</span>";
 				else
 					main.node.browser.innerHTML = "ALTEN INTERNET EXPLORER ERKANNT:&emsp;<span style=\"color:red;\">NICHT GETESTET</span>";
+				
 				break;
 			}
 			
-			try {main.storage = JSON.parse(localStorage.getItem("storage")) || main.storage;} catch(ex) {}
+			try { ////
+				main.storageBackup = localStorage.storage;
+				main.storage = JSON.parse(main.storageBackup) || main.storage;
+			} catch(ex) {}
 			
 			if(!main.storage.left.size)
-				main.storage.left.size = main.node.content.clientWidth / 4;
+				main.storage.left.size = main.node.content.clientWidth / 2;
 			if(!main.storage.output.size)
 				main.storage.output.size = main.node.right.clientHeight / 4;
 			
@@ -203,6 +211,9 @@ function setup_main() {
 				main.isResizing = null;
 			};
 			main.node.body.onmousemove = function(ev) {
+				if(!ev.buttons) {
+					main.isResizing = null;
+				}
 				if(main.isResizing == "left") {
 					main.storage.left.size = ev.clientX - main.node.content.getBoundingClientRect().left - 5;
 					main.shouldResize = true;
@@ -230,6 +241,9 @@ function setup_main() {
 			
 			main.worker = new Worker(URL.createObjectURL(new Blob([script],{type: "text/javascript"})));
 			main.worker.onmessage = main.workerMessage;
+			
+			if(location.search)
+				eval(decodeURIComponent(location.search.substr(1)));
 		
 			main.hasLoaded = true;
 			main.requestUpdate();
@@ -258,9 +272,9 @@ function setup_main() {
 			main.storage[dest].panel = panel;
 			
 			if(panel && !main.session.current && !main.noproject[panel])
-				panel = (dest == "left") ? "left_loadedprojects" : null;
+				panel = (dest == "left") ? "left_loadedprojects" : "edit_noproject";
 			if(panel && !main.session.visibleRoot && !main.notab[panel])
-				panel = (dest == "left") ? "left_tabs" : null;
+				panel = (dest == "left") ? "left_tabs" : "edit_notab";
 				
 			if(main.currentPanel[dest] == panel)
 				return;
@@ -284,16 +298,81 @@ function setup_main() {
 			});
 			var name3 = (count1 > 1) ? name1 + " (" + count1 + ")" : name1;
 			
-			var projectRoot = {type: "project",config: {id: [1].join("_"),name: name3}};
 			var projectNode = {};
-			projectNode[[1].join("_")] = projectRoot;
+			var id = 1;
+			projectNode[[id].join("_")] = {
+				parsed: true,
+				type: "project",
+				config: {
+					id: [id].join("_"),
+					name: name3,
+				},
+				entry: [{
+					parsed: true,
+					type: "reference",
+					reference: [id + 1].join("_"),
+				}],
+			};
+			++id;
+			projectNode[[id].join("_")] = {
+				parsed: true,
+				type: "package",
+				config: {
+					id: [id].join("_"),
+					name: "package1",
+				},
+				entry: [{
+					parsed: true,
+					type: "reference",
+					reference: [id + 1].join("_"),
+				}],
+			};
+			++id;
+			projectNode[[id].join("_")] = {
+				parsed: true,
+				type: "class",
+				config: {
+					id: [id].join("_"),
+					name: "class1",
+				},
+				entry: [{
+					parsed: true,
+					type: "reference",
+					reference: [id + 1].join("_"),
+				}],
+			};
+			++id;
+			projectNode[[id].join("_")] = {
+				parsed: true,
+				type: "function",
+				config: {
+					id: [id].join("_"),
+					name: "function1",
+				},
+				parameter: [],
+				statement: {
+					parsed: true,
+					type: "reference",
+					reference: [id + 1].join("_"),
+				},
+			};
+			++id;
+			projectNode[[id].join("_")] = {
+				parsed: true,
+				type: "block",
+				config: {
+					id: [id].join("_"),
+				},
+				statement: [],
+			};
+			++id;
 			main.storage.project[name3] = {
 				name: name3,
-				projectRoot: projectRoot,
+				projectRoot: projectNode[[1].join("_")],
 				projectNode: projectNode,  // all created nodes so far
-				nextId: [2],  // big integer
+				nextId: [id],  // big integer
 				tab: [{
-					htmlpath: "////",  //// moved ?
+					htmlpath: "&lt;project&gt;<span style=\"color:#f06;\">(" + utils.escapeHtml(name3) + ")</span>",  //// moved ?
 					visibleRoot: [1].join("_"),
 					select: null,
 				}],
@@ -304,9 +383,6 @@ function setup_main() {
 					tab: 0,
 				}
 			};
-			
-			
-			console.log(name3,main.storage.project);
 			
 			return name3;
 		},
@@ -381,19 +457,20 @@ function setup_main() {
 				main.resetCompiler();
 			}
 		},
-		resetCompiler: function() {
+		resetCompiler: function() { //// replace
 			main.session.compile = {
 				shouldUpdate: false,
 				inputText: null, // input html-decoded editor content
 				inputSelect: null, // offset in inputText
-				outputFormat: null, // output html format definitions
-				outputSelect: null, // index and offset in outputFormat
-				outputText: null, // output html-decoded editor content (detect change)
-				outputGroups: [], // output group ranges for html-decoded editor content (detect changed range)
 			};
 			main.session.analyze = {
 				shouldUpdate: false,
 				structure: null, // code structure
+				functions: null, // functions, entry points
+				outputFormat: null, // output html format definitions
+				outputSelect: null, // index and offset in outputFormat
+				outputText: null, // output html-decoded editor content (detect change)
+				outputGroups: [], // output group ranges for html-decoded editor content (detect changed range)
 			};
 		},
 		requestUpdate: function() {
@@ -532,7 +609,7 @@ function setup_main() {
 			main.storage.edit.select = null;
 			
 			
-			
+			 ////
 			main.session.current.name = main.workerMessage.current.name;
 			main.session.current.projectRoot = main.workerMessage.current.projectRoot; //// unparsed in root ???
 			main.session.current.projectNode = main.workerMessage.current.projectNode;
@@ -546,21 +623,51 @@ function setup_main() {
 			
 			// add html, encode entities
 			main.node.code.innerHTML = "";
+			var shouldIndent = true;
 			var indent = 0;
 			var newline = {gecko: "br",webkit: "div",trident: "p",unknown: "br"}[main.agent];
 			var node1 = (newline == "br") ? main.node.code : document.createElement(newline);
-			utils.forList(main.session.compile.outputText,function(val) {
+			utils.forList(main.session.analyze.outputFormat,function(val) {
 				switch(val[0]) {
+				case "t":
+				case "f":
+				case "c":
+					if(shouldIndent) {
+						shouldIndent = false;
+						node1.appendChild(document.createTextNode(new Array(indent + 1).join("\t")));
+					}
+					
+					break;
+				}
+				switch(val[0]) {
+				case "t":
+					node1.appendChild(document.createTextNode(val[1]));
+					
+					break;
 				case "f":
 					var node2 = document.createElement("span");
 					node2.appendChild(document.createTextNode(val[1]));
 					node2.setAttribute("style",val[2]);
 					node1.appendChild(node2);
+					
 					break;
-				case "t":
-					node1.appendChild(document.createTextNode(val[1]));
+				case "c": //// caret left of @config -> caret right of @config
+				          //// @config belongs to next right token
+					var node2 = document.createElement("span");
+					node2.appendChild(document.createTextNode(val[1]));
+					node2.setAttribute("style","display:none;");
+					node1.appendChild(node2);
+					
+					break;
+				case "g":
+					var node2 = document.createElement("input");
+					node2.setAttribute("type","hidden");
+					node2.setAttribute("name",val[1]);
+					node1.appendChild(node2);
+					
 					break;
 				case "n":
+					shouldIndent = true;
 					if(newline == "br") {
 						main.node.code.appendChild(document.createElement("br"));
 					}
@@ -568,10 +675,11 @@ function setup_main() {
 						main.node.code.appendChild(node1);
 						node1 = document.createElement(newline);
 					}
-					node1.appendChild(document.createTextNode(new Array(indent + 1).join("\t")));
+					
 					break;
 				case "i":
 					indent += val[1];
+					
 					break;
 				}
 			});
@@ -594,40 +702,79 @@ function setup_main() {
 			//// escape E->EE 0->E0 1->E1, unescape after tokenization
 			
 			
-			main.session.compile.outputHtml = main.node.code.innerHTML;
+			
+			
+			
+			// decode html 1
+			var text = main.node.code.innerHTML;
+			
+			// save selection 2
+			var groups = [];
+			text = text.replace(/<\/input>/ig,"");
+			text = text.replace(/<(?!input)[^>]*>/ig," ");
+			
+			groups.push(text.indexOf("<input"));
+			text = text.replace(/<input[^>]*>/i,"");
+			
+			// detect groups
+			text = text.replace(/<input[^>]*>/i,"");
+			utils.forList(main.session.analyze.outputGroups,function(val) {
+			});
+			
+			// decode html 2
+			if(text.search(/<[^>]*>/ig) != -1) { ////
+				throw new Error();
+			}
+			main.session.analyze.outputText = utils.unescapeHtml(text);
 		},
+		/*update3_compile3: function(queue) {
+			//// edit while update3_compile2 -> start compiler with old text data & discard changes (e.g. node ids)
+			//// edit while update3_compile2 -> print compiler output, apply edit events, start compiler with current and edited text data (node ids already contained)
+		},*/
 		update3_updateEdit: function(queue) {
 			switch(main.currentPanel.edit) { // update only visible panel
-			case "edit_code":console.log(111);
+			case "edit_code":
 				main.storage.edit.html = main.node.code.innerHTML;
 				main.update3_updateCode(queue);
+				
 				break;
 			case "edit_config":
 				main.storage.edit.html = main.node.code.innerHTML;
 				main.update3_updateCode(queue);
+				
 				break;
 			case "edit_codediagram":
+				
 				break;
 			case "edit_data":
+				
 				break;
 			case "edit_dependencies":
+				
 				break;
 			case "edit_scopes":
+				
 				break;
 			case "edit_states":
+				
 				break;
 			case "edit_flowchart":
 				main.update3_updateDiagram(queue);
+				
 				break;
 			case "edit_controlpath":
 				main.update3_updateDiagram(queue);
+				
 				break;
 			case "edit_behavior":
+				
 				break;
 			case "edit_dataflow":
 				main.update3_updateDiagram(queue);
+				
 				break;
 			case "edit_valuerange":
+				
 				break;
 			}
 		},
@@ -680,24 +827,27 @@ function setup_main() {
 		update3_updateLeft: function(queue) {
 			switch(main.currentPanel.left) { // update only visible panel
 			case "left_keys":
+				
 				break;
 			case "left_loadedprojects":
 				var html = "";
 				utils.forMap(main.storage.project,function(val,key) {
 					html += "<tr>";
-					html += main.listEntry(utils.escapeHtml(key),"width:100%;padding-top:5px;padding-bottom:5px;","main.setProject(utils.unescapeHtml('" + utils.escapeQuote(utils.escapeHtml(key)) + "')); main.setPanel('left','left_structure'); main.requestUpdate();");
-					html += main.listEntry("Entf.","width:0px;padding-top:5px;padding-bottom:5px;","main.removeProject(utils.unescapeHtml('" + utils.escapeQuote(utils.escapeHtml(key)) + "')); main.requestUpdate();");
+					html += main.listEntry(utils.escapeHtml(key),"width:100%;padding-top:5px;padding-bottom:5px;","main.setProject(utils.unescapeHtml('" + utils.escapeHtml(key) + "')); main.setPanel('left','left_structure'); main.requestUpdate();");
+					html += main.listEntry("Entf.","width:0px;padding-top:5px;padding-bottom:5px;","main.removeProject(utils.unescapeHtml('" + utils.escapeHtml(key) + "')); main.requestUpdate();");
 					html += "</tr>";
 				});
 				if(!html) {
-					html += "<tr>" + main.listEntry("","width:100%;padding-top:5px;padding-bottom:5px;") + "</tr>";
+					html += "<tr>" + main.listEntry("","padding-top:5px;padding-bottom:5px;") + "</tr>";
 				}
 				main.node.projects.innerHTML = html;
+				
 				break;
 			case "left_currentproject":
 				main.node.currentname.innerHTML = utils.escapeHtml(main.session.current.name);
+				
 				break;
-			case "left_tabs":console.log(main.session.current.restore.tab);
+			case "left_tabs": //// update path on move
 				var tab = main.session.current.restore.tab;
 				main.node.currenttab.innerHTML = (main.session.current.tab[tab])
 					? main.session.current.tab[tab].htmlpath
@@ -715,42 +865,65 @@ function setup_main() {
 				}
 				else {
 					main.node.hastabs.innerHTML = "Keine Tabs geöffnet";
-					main.node.tabs.innerHTML = "<tr>" + main.listEntry("Strukturansicht zeigen","width:0px;padding-top:5px;padding-bottom:5px;","main.setPanel('left','left_structure'); main.requestUpdate();") + "</tr>";
+					main.node.tabs.innerHTML = "<tr>" + main.listEntry("Strukturansicht zeigen","padding-top:5px;padding-bottom:5px;","main.setPanel('left','left_structure'); main.requestUpdate();") + "</tr>";
 				}
+				
 				break;
 			case "left_structure":
 				var html = "";
-				utils.forList(main.session.analyze.structure,function(val) {  //// indented html name, html path, id string
+				utils.forList(main.session.analyze.structure,function(val) {
 					//// &shy; soft hyphens (wrap) and nowrap spans
-					html += "<tr>" + main.listEntry(val.htmlname,(val.visibleRoot) ? "" : "color:#666;",(val.visibleRoot) ? "main.addTab(utils.unescapeHtml('" + utils.escapeQuote(utils.escapeHtml(val.htmlpath)) + "'),'" + val.visibleRoot + "');" : null) + "</tr>"; //// how to escape
+					html += "<tr>" + main.listEntry(val.htmlname,"",(val.visibleRoot) ? "main.addTab(utils.unescapeHtml('" + utils.escapeHtml(val.htmlpath) + "'),'" + val.visibleRoot + "');" : null) + "</tr>";
 				});
 				if(!html) {
-					html += "<tr>" + main.listEntry("","width:100%;padding-top:5px;padding-bottom:5px;") + "</tr>";
+					html += "<tr>" + main.listEntry("","padding-top:5px;padding-bottom:5px;") + "</tr>";
 				}
 				main.node.structure.innerHTML = html;
+				
 				break;
 			case "left_properties":
+				
 				break;
 			case "left_variants":
 				utils.forList(main.session.current.variant,function(val) {
 				});
+				
 				break;
 			case "left_history":
 				utils.forList(main.session.current.projectLog,function(val) {
 				});
+				
 				break;
 			case "left_search":
+				
 				break;
 			case "left_execute":
+				
 				break;
 			case "left_inspect":
+				
 				break;
 			case "left_state":
+				
 				break;
 			}
 		},
-		update3_store: function(queue) {
-			localStorage.setItem("storage",JSON.stringify(main.storage));
+		update3_store: function(queue) {console.log(JSON.stringify(main.storage).length);
+			try {
+				main.storageBackup = localStorage.storage;
+				localStorage.clear();
+				localStorage.storage = JSON.stringify(main.storage);
+			}
+			catch(ex) { ////
+				if(main.storageBackup) {
+					localStorage.clear();
+					localStorage.storage = main.storageBackup;
+				}
+				
+				alert("Autosave fehlgeschlagen.\n\n"
+					+ "Bisheriger Verbrauch:  " + Math.ceil(main.storageBackup.length) + " Bytes\n"
+					+ "Aktueller Verbrauch:  " + Math.ceil(JSON.stringify(main.storage).length) + " Bytes\n");
+			}
 		},
 	
 		//// browser test

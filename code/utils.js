@@ -58,7 +58,7 @@ function setup_utils() {
 		unescapeHtml: function(str) {
 			var node = document.createElement("div");
 			node.innerHTML = str;
-			return (node.textContent || node.innerText);
+			return node.textContent || node.innerText;
 		},
 		escapeHtml: function(str) {
 			str = str.replace(/&/g,"&amp;");
@@ -66,6 +66,7 @@ function setup_utils() {
 			str = str.replace(/>/g,"&gt;");
 			str = str.replace(/"/g,"&quot;");
 			str = str.replace(/'/g,"&#39;");
+			str = str.replace(/\\/g,"&#92;");
 			return str;
 		},
 		makeIdentifier: function(str) {

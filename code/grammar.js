@@ -5,6 +5,13 @@ function setup_grammar() {
 		]];
 	}
 	function genBinaryPattern(list,parsedEx) {
+		
+		//// associative multiple operand list (=,+,*,||,&&,|,&,^)
+		//// <,<=,==,  >,>=,==,  ==   exec
+		//// . [
+		//// map/list direct access convert
+		//// unary minus
+		
 		var production = {
 			iterate: true,
 			production: [],
@@ -13,6 +20,7 @@ function setup_grammar() {
 			var key2 = (typeof(val1) == "object") ? val1[0] : val1;
 			var val2 = (typeof(val1) == "object") ? val1[1] : val1;
 			production.production[key2] = {
+				config: true,
 				structure: [
 					["p","left"],
 					["p","right"]
@@ -23,7 +31,7 @@ function setup_grammar() {
 				parse: function(val3) {
 					var res3 = utils.clone(val3);
 					
-					res3.config = val3.config || {}; ////
+					res3.config = (val3.config) ? val3.config.config.value : {};
 					
 					res3.left = parseParenthese(val3.left);
 					res3.right = parseParenthese(val3.right);
@@ -35,7 +43,7 @@ function setup_grammar() {
 				print: function(val3) {
 					var res3 = utils.clone(val3);
 					
-					res3.config = val3.config;
+					res3.config = (val3.config) ? {config: {type: "config",value: val3.config}} : null;
 					
 					res3.left = printParenthese(val3.left,"sequence",val3);
 					res3.right = printParenthese(val3.right,"sequence",val3);
@@ -55,16 +63,17 @@ function setup_grammar() {
 			var key2 = (typeof(val1) == "object") ? val1[0] : val1;
 			var val2 = (typeof(val1) == "object") ? val1[1] : val1;
 			production.production[key2] = {
+				config: true,
 				structure: [
 					["p","left"]
 				],
 				pattern: [
-					configToken(),val2," ",["p","expression","left"]
+					configToken(),val2,["p","expression","left"]
 				],
 				parse: function(val3) {
 					var res3 = utils.clone(val3);
 					
-					res3.config = val3.config || {}; ////
+					res3.config = (val3.config) ? val3.config.config.value : {};
 					
 					res3.left = parseParenthese(val3.left);
 					
@@ -75,7 +84,7 @@ function setup_grammar() {
 				print: function(val3) {
 					var res3 = utils.clone(val3);
 					
-					res3.config = val3.config;
+					res3.config = (val3.config) ? {config: {type: "config",value: val3.config}} : null;
 					
 					res3.left = printParenthese(val3.left,"sequence",val3);
 					
@@ -94,16 +103,17 @@ function setup_grammar() {
 			var key2 = (typeof(val1) == "object") ? val1[0] : val1;
 			var val2 = (typeof(val1) == "object") ? val1[1] : val1;
 			production.production[key2] = {
+				config: true,
 				structure: [
 					["p","left"]
 				],
 				pattern: [
-					["p","expression","left"]," ",configToken(),val2
+					["p","expression","left"],configToken(),val2
 				],
 				parse: function(val3) {
 					var res3 = utils.clone(val3);
 					
-					res3.config = val3.config || {}; ////
+					res3.config = (val3.config) ? val3.config.config.value : {};
 					
 					res3.left = parseParenthese(val3.left);
 					
@@ -114,7 +124,7 @@ function setup_grammar() {
 				print: function(val3) {
 					var res3 = utils.clone(val3);
 					
-					res3.config = val3.config;
+					res3.config = (val3.config) ? {config: {type: "config",value: val3.config}} : null;
 					
 					res3.left = printParenthese(val3.left,"sequence",val3);
 					
@@ -137,7 +147,8 @@ function setup_grammar() {
 			restore:  0,  // restore exact group count before parsing
 			group:    1,  // restore, but group at least once
 			              // restore, but group at least once if contained.type < container.type
-			sequence: (grammar.production[expression.type][1] < grammar.production[val1.type][1]) ? 1 : 0,
+			sequence: (val1 && grammar.production[expression.type]
+				&& grammar.production[expression.type][1] < grammar.production[val1.type][1]) ? 1 : 0,
 		}[mode];
 		i = expression.parenthese || i;
 		for(; i; --i)
@@ -151,16 +162,11 @@ function setup_grammar() {
 		return (statement.type == "expression;") ? statement.expression : statement;
 	}
 	function printExpression(statement) {
-		return (grammar.categorize["expression"][statement.type]) ? {
+		return (!!grammar.categorize["expression"][statement.type]) ? {
 			type: "expression;",
 			expression: statement,
 		} : statement;
 	}
-	
-	////
-	//// PARSE no print, PRINT no parse !!!
-	//// pass already cloned, no return
-	////
 	
 	//// literal/property/terminal id ?
 	//// terminal parsed/unparsed ?
@@ -179,6 +185,7 @@ function setup_grammar() {
 			{
 				production: {   //// tolerate unparsed in project, package and class
 					project: {
+						config: true,
 						structure: [
 							["[p","entry"]
 						],
@@ -186,8 +193,9 @@ function setup_grammar() {
 							configToken(),"project"," ",["p","string","name"]," ",["g","{","entry",[
 								["n"],
 									["i",+1],["*","entry",[
-										["p$","package","entry"],["n"],
-										["n"]
+										["p$","package","entry"],["n"],["?","blank",[  // do not print last
+											["n"]
+										]]
 									]],
 								["i",-1]
 							]]
@@ -195,7 +203,7 @@ function setup_grammar() {
 						parse: function(val1) {
 							var res1 = utils.clone(val1);
 							
-							res1.config = val1.config || {}; ////
+							res1.config = (val1.config) ? val1.config.config.value : {};
 							res1.config.name = utils.unescapeQuote(val1.name.value.substring(1,val1.name.value.length - 1)); //// unescape
 							
 							res1.entry = [];
@@ -210,16 +218,22 @@ function setup_grammar() {
 						print: function(val1) {
 							var res1 = utils.clone(val1);
 							
-							res1.config = val1.config;
+							res1.config = (val1.config) ? {config: {type: "config",value: val1.config}} : null;
 							
 							res1.name = {
+								terminal: true,
 								type: "string",
 								value: "\"" + utils.escapeQuote(val1.config.name) + "\"", //// escape
 							};
 							
 							res1.entry = {entry: []};
-							utils.forList(val1.entry,function(val2) {
-								res1.entry.entry.push({entry: val2});
+							utils.forList(val1.entry,function(val2,i) {
+								var res2 = {};
+								
+								res2.entry = val2;
+								res2.blank = (i < val1.entry.length - 1);
+								
+								res1.entry.entry.push(res2);
 							});
 							
 							return res1;
@@ -230,6 +244,7 @@ function setup_grammar() {
 			{
 				production: {
 					package: {
+						config: true,
 						structure: [
 							["[p","entry"]
 						],
@@ -237,11 +252,13 @@ function setup_grammar() {
 							configToken(),"package"," ",["p","identifier","name"]," ",["g","{","entry",[
 								["n"],
 									["i",+1],["*","entry",[
-										["|$","entry",{
+										["|","entry",{
 											package: [["p","package","entry"]],
 											class: [["p","class","entry"]],
-										}],["n"],
-										["n"]
+											"$": [["p$","$","entry"]],
+										}],["n"],["?","blank",[  // do not print last
+											["n"]
+										]]
 									]],
 								["i",-1]
 							]]
@@ -249,7 +266,7 @@ function setup_grammar() {
 						parse: function(val1) {
 							var res1 = utils.clone(val1);
 							
-							res1.config = val1.config || {}; ////
+							res1.config = (val1.config) ? val1.config.config.value : {};
 							res1.config.name = val1.name.value;
 							
 							res1.entry = [];
@@ -264,19 +281,21 @@ function setup_grammar() {
 						print: function(val1) {
 							var res1 = utils.clone(val1);
 							
-							res1.config = val1.config;
+							res1.config = (val1.config) ? {config: {type: "config",value: val1.config}} : null;
 							
 							res1.name = {
+								terminal: true,
 								type: "identifier",
 								value: utils.makeIdentifier(val1.config.name),
 							};
 							
 							res1.entry = {entry: []};
-							utils.forList(val1.entry,function(val2) {
+							utils.forList(val1.entry,function(val2,i) {
 								var res2 = {};
 								
 								res2.entry = {entry: val2};
-								res2.entry.production = val2.type;
+								res2.entry.production = ({package: true,class: true}[val2.type]) ? val2.type : "$";
+								res2.blank = (i < val1.entry.length - 1);
 								
 								res1.entry.entry.push(res2);
 							});
@@ -289,6 +308,7 @@ function setup_grammar() {
 			{
 				production: {
 					class: {
+						config: true,
 						structure: [
 							["[p","entry"]
 						],
@@ -296,13 +316,15 @@ function setup_grammar() {
 							configToken(),"class"," ",["p","identifier","name"]," ",["g","{","entry",[
 								["n"],
 									["i",+1],["*","entry",[
-										["|$","entry",{
+										["|","entry",{
 											var: [["p","var","entry"]],
 											function: [["p","function","entry"]],
+											"$": [["p$","$","entry"]],
 										}],["?","separator",[  // print all
 											";"
-										]],["n"],
-										["n"]
+										]],["n"],["?","blank",[  // do not print last
+											["n"]
+										]]
 									]],
 								["i",-1]
 							]]
@@ -310,7 +332,7 @@ function setup_grammar() {
 						parse: function(val1) {
 							var res1 = utils.clone(val1);
 							
-							res1.config = val1.config || {}; ////
+							res1.config = (val1.config) ? val1.config.config.value : {};
 							res1.config.name = val1.name.value;
 							
 							res1.entry = [];
@@ -325,20 +347,22 @@ function setup_grammar() {
 						print: function(val1) {
 							var res1 = utils.clone(val1);
 							
-							res1.config = val1.config;
+							res1.config = (val1.config) ? {config: {type: "config",value: val1.config}} : null;
 							
 							res1.name = {
+								terminal: true,
 								type: "identifier",
 								value: utils.makeIdentifier(val1.config.name),
 							};
 							
 							res1.entry = {entry: []};
-							utils.forList(val1.entry,function(val2) {
+							utils.forList(val1.entry,function(val2,i) {
 								var res2 = {};
 								
 								res2.entry = {entry: val2};
-								res2.entry.production = val2.type;
-								res2.separator = true;
+								res2.entry.production = ({var: true,function: true}[val2.type]) ? val2.type : "$";
+								res2.separator = !!{function: true}[val2.type];
+								res2.blank = (i < val1.entry.length - 1);
 								
 								res1.entry.entry.push(res2);
 							});
@@ -351,14 +375,15 @@ function setup_grammar() {
 			{
 				production: {
 					function: {
+						config: true,
 						structure: [
 							["[p","parameter"],
 							["p","statement"]
 						],
 						pattern: [
-							configToken(),"function"," ",["p","identifier","name"],":"," ",["g","(","parameter",[
+							configToken(),"function"," ",["p","identifier","name"],":"," ",["g","(","parameter",[  //// grammar problem 1
 								["*","parameter",[
-									configToken(),["p","property","parameter"],["?","separator",[  // match last => unparsed
+									configToken(),["p","identifier","parameter"],["?","separator",[  // match last => unparsed
 										","," "
 									]]
 								]]
@@ -367,7 +392,7 @@ function setup_grammar() {
 						parse: function(val1) {
 							var res1 = utils.clone(val1);
 							
-							res1.config = val1.config || {}; ////
+							res1.config = (val1.config) ? val1.config.config.value : {};
 							res1.config.name = val1.name.value;
 							
 							res1.parsed = (!val1.parameter.parameter.length
@@ -377,7 +402,7 @@ function setup_grammar() {
 							utils.forList(val1.parameter.parameter,function(val2) {
 								var res2 = val2.parameter;
 								
-								res2.config = val2.config || {}; ////
+								res2.config = (val2.config) ? val2.config.config.value : {};
 								
 								res1.parameter.push(res2);
 							});
@@ -391,9 +416,10 @@ function setup_grammar() {
 						print: function(val1) {
 							var res1 = utils.clone(val1);
 							
-							res1.config = val1.config;
+							res1.config = (val1.config) ? {config: {type: "config",value: val1.config}} : null;
 							
 							res1.name = {
+								terminal: true,
 								type: "identifier",
 								value: utils.makeIdentifier(val1.config.name),
 							};
@@ -402,7 +428,7 @@ function setup_grammar() {
 							utils.forList(val1.parameter,function(val2,i) {
 								var res2 = {};
 								
-								res2.config = val2.config;
+								res2.config = (val2.config) ? {config: {type: "config",value: val2.config}} : null;
 								
 								res2.parameter = val2;
 								res2.separator = (i < val1.parameter.length - 1);
@@ -422,6 +448,7 @@ function setup_grammar() {
 			{
 				production: {
 					if: {
+						config: true,
 						structure: [
 							["[{","statement",[
 								["p","condition"],
@@ -445,7 +472,7 @@ function setup_grammar() {
 						parse: function(val1) {
 							var res1 = utils.clone(val1);
 							
-							res1.config = val1.config || {}; ////
+							res1.config = (val1.config) ? val1.config.config.value : {};
 							
 							res1.statement = [{
 								condition: parseParenthese(val1.condition.condition),
@@ -461,7 +488,7 @@ function setup_grammar() {
 								res1.statement.push(res2);
 							});
 							
-							res1.else = (val1.else) ? val1.else.else : null;
+							res1.else = (val1.else) ? {statement: val1.else.statement} : null;
 							
 							delete res1.condition;
 							delete res1.elseif;
@@ -471,7 +498,7 @@ function setup_grammar() {
 						print: function(val1) {
 							var res1 = utils.clone(val1);
 							
-							res1.config = val1.config;
+							res1.config = (val1.config) ? {config: {type: "config",value: val1.config}} : null;
 							
 							res1.condition = {condition: printParenthese(val1.statement[0].condition,"restore")};
 							res1.statement = val1.statement[0].statement;
@@ -488,7 +515,7 @@ function setup_grammar() {
 								}
 							});
 							
-							res1.else = (val1.else) ? {else: val1.else} : null;
+							res1.else = (val1.else) ? {statement: val1.else.statement} : null;
 							
 							return res1;
 						},
@@ -498,13 +525,14 @@ function setup_grammar() {
 			{
 				production: {
 					switch: {
+						config: true,
 						structure: [
 							["p","expression"],
 							["[{","statement",[
 								["p","expression"],
 								["[p","statement"]
 							]],
-							["{","default",[
+							["{","else",[
 								["[p","statement"]
 							]]
 						],
@@ -516,14 +544,14 @@ function setup_grammar() {
 								["*","statement",[
 									"case"," ",["p","expression","expression"],":",["n"],
 										["i",+1],["*","statement",[
-											["p$","statement","statement"],["n"]
+											["p$","statement","statement",{"case": true,"default": true}],["n"]
 										]],
 									["i",-1]
 								]],
-								["?","default",[
+								["?","else",[
 									"default",":",["n"],
 										["i",+1],["*","statement",[
-											["p$","statement","statement"],["n"]
+											["p$","statement","statement",{"case": true,"default": true}],["n"]
 										]],
 									["i",-1]
 								]]
@@ -532,7 +560,7 @@ function setup_grammar() {
 						parse: function(val1) {
 							var res1 = utils.clone(val1);
 							
-							res1.config = val1.config || {}; ////
+							res1.config = (val1.config) ? val1.config.config.value : {};
 							
 							res1.expression = parseParenthese(val1.expression.expression);
 							
@@ -550,10 +578,10 @@ function setup_grammar() {
 								res1.statement.push(res2);
 							});
 							
-							if(val1.statement.default) {
-								res1.default = {statement: []};
-								utils.forList(val1.statement.default,function(val2) {
-									res1.default.statement.push(parseExpression(val2.statement));
+							if(val1.statement.else) {
+								res1.else = {statement: []};
+								utils.forList(val1.statement.else.statement,function(val2) {
+									res1.else.statement.push(parseExpression(val2.statement));
 								});
 							}
 							
@@ -562,7 +590,7 @@ function setup_grammar() {
 						print: function(val1) {
 							var res1 = utils.clone(val1);
 							
-							res1.config = val1.config;
+							res1.config = (val1.config) ? {config: {type: "config",value: val1.config}} : null;
 							
 							res1.expression = {expression: printParenthese(val1.expression,"restore")};
 							
@@ -577,13 +605,13 @@ function setup_grammar() {
 									res2.statement.push({statement: printExpression(val3)});
 								});
 								
-								res1.statement.push(res2);
+								res1.statement.statement.push(res2);
 							});
 							
-							if(val1.default) {
-								res1.statement.default = {statement: []};
-								utils.forList(val1.default.statement,function(val2) {
-									res1.statement.default.statement.push({statement: printExpression(val2)});
+							if(val1.else) {
+								res1.statement.else = {statement: []};
+								utils.forList(val1.else.statement,function(val2) {
+									res1.statement.else.statement.push({statement: printExpression(val2)});
 								});
 							}
 							
@@ -595,6 +623,7 @@ function setup_grammar() {
 			{
 				production: {
 					while: {
+						config: true,
 						structure: [
 							["p","condition"],
 							["p","statement"]
@@ -607,7 +636,7 @@ function setup_grammar() {
 						parse: function(val1) {
 							var res1 = utils.clone(val1);
 							
-							res1.config = val1.config || {}; ////
+							res1.config = (val1.config) ? val1.config.config.value : {};
 							
 							res1.condition = parseParenthese(val1.condition.condition);
 							res1.statement = val1.statement;
@@ -617,7 +646,7 @@ function setup_grammar() {
 						print: function(val1) {
 							var res1 = utils.clone(val1);
 							
-							res1.config = val1.config;
+							res1.config = (val1.config) ? {config: {type: "config",value: val1.config}} : null;
 							
 							res1.condition = {condition: printParenthese(val1.condition,"restore")};
 							res1.statement = val1.statement;
@@ -630,6 +659,7 @@ function setup_grammar() {
 			{
 				production: {
 					for: {
+						config: true,
 						structure: [
 							["p","var"],
 							["p","condition"],
@@ -638,13 +668,13 @@ function setup_grammar() {
 						],
 						pattern: [
 							configToken(),"for",["g","(","for",[
-								["|","var",{
+								["|","var",{  //// grammar problem 2
 									var: [["p","var","var"]],
 									";": [";"],
 								}]," ",["?","condition",[
 									["p","expression","condition"]
 								]],";"," ",["*","step",[
-									["p","statement","step"],["?","separator",[  // match last => unparsed
+									["p","expression","step"],["?","separator",[  // match last => unparsed
 										","," "
 									]]
 								]]
@@ -653,7 +683,7 @@ function setup_grammar() {
 						parse: function(val1) {
 							var res1 = utils.clone(val1);
 							
-							res1.config = val1.config || {}; ////
+							res1.config = (val1.config) ? val1.config.config.value : {};
 							
 							res1.parsed = (!val1.for.step.length
 								|| !val1.for.step[val1.for.step.length - 1].separator);
@@ -663,7 +693,7 @@ function setup_grammar() {
 							
 							res1.step = [];
 							utils.forList(val1.for.step,function(val2) {
-								res1.step.push(parseExpression(val2.step));
+								res1.step.push(parseParenthese(val2.step));
 							});
 							
 							res1.statement = val1.statement;
@@ -675,7 +705,7 @@ function setup_grammar() {
 						print: function(val1) {
 							var res1 = utils.clone(val1);
 							
-							res1.config = val1.config;
+							res1.config = (val1.config) ? {config: {type: "config",value: val1.config}} : null;
 							
 							res1.for = {};
 							res1.for.var = (val1.var) ? {var: val1.var} : {};
@@ -686,8 +716,7 @@ function setup_grammar() {
 							utils.forList(val1.step,function(val2,i) {
 								var res2 = {};
 								
-								val2.separator = false;
-								res2.step = printExpression(val2);
+								res2.step = printParenthese(val2,"restore");
 								res2.separator = (i < val1.step.length - 1);
 								
 								res1.for.step.push(res2);
@@ -703,6 +732,7 @@ function setup_grammar() {
 			{
 				production: {
 					"for in": {
+						config: true,
 						structure: [
 							["p","var"],
 							["p","expression"],
@@ -716,7 +746,7 @@ function setup_grammar() {
 						parse: function(val1) {
 							var res1 = utils.clone(val1);
 							
-							res1.config = val1.config || {}; ////
+							res1.config = (val1.config) ? val1.config.config.value : {};
 							
 							res1.parsed = (val1.for.var.var.length == 1 && !val1.for.var.var[0].expression);
 							
@@ -731,12 +761,12 @@ function setup_grammar() {
 						print: function(val1) {
 							var res1 = utils.clone(val1);
 							
-							res1.config = val1.config;
+							res1.config = (val1.config) ? {config: {type: "config",value: val1.config}} : null;
 							
 							res1.for = {};
-							val1.var.separator = false;
-							res1.var = val1.var,expression;
-							res1.expression = printParenthese(val1.expression,"restore");
+							res1.for.var = utils.clone(val1.var);
+							res1.for.var.noseparator = true;
+							res1.for.expression = printParenthese(val1.expression,"restore");
 							res1.statement = val1.statement;
 							
 							return res1;
@@ -747,6 +777,7 @@ function setup_grammar() {
 			{
 				production: {
 					try: {
+						config: true,
 						structure: [
 							["p","statement"],
 							["p","catch"],
@@ -762,7 +793,7 @@ function setup_grammar() {
 						parse: function(val1) {
 							var res1 = utils.clone(val1);
 							
-							res1.config = val1.config || {}; ////
+							res1.config = (val1.config) ? val1.config.config.value : {};
 							
 							res1.statement = val1.statement;
 							res1.catch = (val1.catch) ? val1.catch.catch : null;
@@ -773,7 +804,7 @@ function setup_grammar() {
 						print: function(val1) {
 							var res1 = utils.clone(val1);
 							
-							res1.config = val1.config;
+							res1.config = (val1.config) ? {config: {type: "config",value: val1.config}} : null;
 							
 							res1.statement = val1.statement;
 							res1.catch = (val1.catch) ? {catch: val1.catch} : null;
@@ -788,11 +819,12 @@ function setup_grammar() {
 				production: {
 					block: {  //// tolerate unparsed in block
 						variant: true,
+						config: true,
 						structure: [
 							["[p","statement"]
 						],
 						pattern: [
-							configToken(),["g","{","statement",[
+							configToken(),["g","{","statement",[  //// make sibling unparsed (map in block -> unparsed block)
 								["n"],
 									["i",+1],["*","statement",[
 										["p$","statement","statement"],["n"]
@@ -803,7 +835,7 @@ function setup_grammar() {
 						parse: function(val1) {
 							var res1 = utils.clone(val1);
 							
-							res1.config = val1.config || {}; ////
+							res1.config = (val1.config) ? val1.config.config.value : {};
 							
 							res1.statement = [];
 							utils.forList(val1.statement.statement,function(val2) {
@@ -815,7 +847,7 @@ function setup_grammar() {
 						print: function(val1) {
 							var res1 = utils.clone(val1);
 							
-							res1.config = val1.config;
+							res1.config = (val1.config) ? {config: {type: "config",value: val1.config}} : null;
 							
 							res1.statement = {statement: []};
 							utils.forList(val1.statement,function(val2) {
@@ -830,6 +862,7 @@ function setup_grammar() {
 			{
 				production: {
 					var: {
+						config: true,
 						structure: [
 							["[{","var",[
 								["p","name"],
@@ -839,7 +872,7 @@ function setup_grammar() {
 						pattern: [
 							configToken(),"var"," ",["+","var",[
 								configToken(),["|","var",{
-									property: [["p","property","var"]],
+									identifier: [["p","identifier","var"]],
 									"=": [["p","=","var"]], // warning: variant xor iterate
 								}],["?","separator",[  // match last => unparsed
 									","," "
@@ -851,7 +884,7 @@ function setup_grammar() {
 						parse: function(val1) {
 							var res1 = utils.clone(val1);
 							
-							res1.config = val1.config || {}; ////
+							res1.config = (val1.config) ? val1.config.config.value : {};
 							
 							res1.parsed = (!val1.var.length
 								|| !val1.var[val1.var.length - 1].separator);
@@ -865,7 +898,7 @@ function setup_grammar() {
 								
 								if(val2.var.production == "=") {
 									if(val2.var.var.left.type == "property") {
-										res2.name = val2.var.var.left;
+										res2.name = val2.var.var.left.identifier;
 										res2.expression = parseParenthese(val2.var.var.right);
 									}
 									else {
@@ -873,7 +906,7 @@ function setup_grammar() {
 									}
 								}
 								
-								res2.config = val2.config || {}; ////
+								res2.config = (val2.config) ? val2.config.config.value : {};
 								res2.config.name = res2.name.value;
 								
 								res1.var.push(res2);
@@ -886,29 +919,30 @@ function setup_grammar() {
 						print: function(val1) {
 							var res1 = utils.clone(val1);
 							
-							res1.config = val1.config;
+							res1.config = (val1.config) ? {config: {type: "config",value: val1.config}} : null;
 							
 							res1.var = [];
 							utils.forList(val1.var,function(val2,i) {
 								var res2 = {};
 								
-								res2.config = val2.config;
+								res2.config = (val2.config) ? {config: {type: "config",value: val2.config}} : null;
 								
 								res2.var = {
 									var: {
-										type: "property",
-										identifier: {
-											type: "identifier",
-											value: utils.makeIdentifier(val2.config.name),
-										},
+										terminal: true,
+										type: "identifier",
+										value: utils.makeIdentifier(val2.config.name),
 									},
 								};
-								res2.var.production = "property";
+								res2.var.production = "identifier";
 								if(val2.expression) {
 									res2.var = {
 										var: {
 											type: "=",
-											left: res2.var.var,
+											left: {
+												type: "property",
+												identifier: res2.var.var,
+											},
 											right: printParenthese(val2.expression,"restore"),
 										},
 									};
@@ -919,7 +953,7 @@ function setup_grammar() {
 								res1.var.push(res2);
 							});
 							
-							res1.separator = true;
+							res1.separator = !val1.noseparator;
 							
 							return res1;
 						},
@@ -929,6 +963,7 @@ function setup_grammar() {
 			{
 				production: {
 					continue: {
+						config: true,
 						pattern: [
 							configToken(),"continue",["?","separator",[  // print all
 								";"
@@ -937,7 +972,7 @@ function setup_grammar() {
 						parse: function(val1) {
 							var res1 = utils.clone(val1);
 							
-							res1.config = val1.config || {}; ////
+							res1.config = (val1.config) ? val1.config.config.value : {};
 							
 							delete res1.separator;
 							
@@ -946,7 +981,7 @@ function setup_grammar() {
 						print: function(val1) {
 							var res1 = utils.clone(val1);
 							
-							res1.config = val1.config;
+							res1.config = (val1.config) ? {config: {type: "config",value: val1.config}} : null;
 							
 							res1.separator = true;
 							
@@ -958,6 +993,7 @@ function setup_grammar() {
 			{
 				production: {
 					break: {
+						config: true,
 						pattern: [
 							configToken(),"break",["?","separator",[  // print all
 								";"
@@ -966,7 +1002,7 @@ function setup_grammar() {
 						parse: function(val1) {
 							var res1 = utils.clone(val1);
 							
-							res1.config = val1.config || {}; ////
+							res1.config = (val1.config) ? val1.config.config.value : {};
 							
 							delete res1.separator;
 							
@@ -975,7 +1011,7 @@ function setup_grammar() {
 						print: function(val1) {
 							var res1 = utils.clone(val1);
 							
-							res1.config = val1.config;
+							res1.config = (val1.config) ? {config: {type: "config",value: val1.config}} : null;
 							
 							res1.separator = true;
 							
@@ -987,6 +1023,7 @@ function setup_grammar() {
 			{
 				production: {
 					return: {
+						config: true,
 						pattern: [
 							configToken(),"return",["?","separator",[  // print all
 								";"
@@ -995,7 +1032,7 @@ function setup_grammar() {
 						parse: function(val1) {
 							var res1 = utils.clone(val1);
 							
-							res1.config = val1.config || {}; ////
+							res1.config = (val1.config) ? val1.config.config.value : {};
 							
 							delete res1.separator;
 							
@@ -1004,7 +1041,7 @@ function setup_grammar() {
 						print: function(val1) {
 							var res1 = utils.clone(val1);
 							
-							res1.config = val1.config;
+							res1.config = (val1.config) ? {config: {type: "config",value: val1.config}} : null;
 							
 							res1.separator = true;
 							
@@ -1016,6 +1053,7 @@ function setup_grammar() {
 			{
 				production: {
 					throw: {
+						config: true,
 						pattern: [
 							configToken(),"throw",["e"," new Error()"],["?","separator",[  // print all
 								";"
@@ -1024,7 +1062,7 @@ function setup_grammar() {
 						parse: function(val1) {
 							var res1 = utils.clone(val1);
 							
-							res1.config = val1.config || {}; ////
+							res1.config = (val1.config) ? val1.config.config.value : {};
 							
 							delete res1.separator;
 							
@@ -1033,7 +1071,7 @@ function setup_grammar() {
 						print: function(val1) {
 							var res1 = utils.clone(val1);
 							
-							res1.config = val1.config;
+							res1.config = (val1.config) ? {config: {type: "config",value: val1.config}} : null;
 							
 							res1.separator = true;
 							
@@ -1046,6 +1084,9 @@ function setup_grammar() {
 				production: {
 					"expression;": {
 						variant: true,
+						structure: [
+							["p","expression"]
+						],
 						pattern: [
 							["p","expression","expression"],["?","separator",[  // print all
 								";"
@@ -1073,10 +1114,14 @@ function setup_grammar() {
 			},
 			
 			// expression
+			genBinaryPattern(["=","*=","/=","%=","+=","-=","<<=",">>=",">>>=","&=","^=","|="],function(res3) {
+				return !!{".": true,"[": true,property: true}[res3.left.type];
+			}),
 			{
 				iterate: true,
 				production: {
 					"?": {
+						config: true,
 						structure: [
 							["p","condition"],
 							["p","expression"],
@@ -1088,7 +1133,7 @@ function setup_grammar() {
 						parse: function(val1) {
 							var res1 = utils.clone(val1);
 							
-							res1.config = val1.config || {}; ////
+							res1.config = (val1.config) ? val1.config.config.value : {};
 							
 							res1.condition = parseParenthese(val1.condition);
 							res1.expression = parseParenthese(val1.expression);
@@ -1099,7 +1144,7 @@ function setup_grammar() {
 						print: function(val1) {
 							var res1 = utils.clone(val1);
 							
-							res1.config = val1.config;
+							res1.config = (val1.config) ? {config: {type: "config",value: val1.config}} : null;
 							
 							res1.condition = printParenthese(val1.condition,"group");
 							res1.expression = printParenthese(val1.expression,"sequence",val1);
@@ -1110,15 +1155,12 @@ function setup_grammar() {
 					},
 				},
 			},
-			genBinaryPattern(["=","*=","/=","%=","+=","-=","<<=",">>=",">>>=","&=","^=","|="],function(res3) {
-				return !!{".": true,"[": true,property: true}[res3.left.type];
-			}),
 			genBinaryPattern(["||"]),
 			genBinaryPattern(["&&"]),
 			genBinaryPattern(["|"]),
 			genBinaryPattern(["^"]),
 			genBinaryPattern(["&"]),
-			genBinaryPattern(["==","===","!=","!=="]),
+			genBinaryPattern(["==","!="]),
 			genBinaryPattern(["<","<=",">",">="]),
 			genBinaryPattern(["<<",">>",">>>"]),
 			genBinaryPattern([["a+b","+"],["a-b","-"]]),
@@ -1133,6 +1175,7 @@ function setup_grammar() {
 				iterate: true,
 				production: {
 					".": {
+						config: true,
 						structure: [
 							["p","expression"],
 							["p","key"]
@@ -1143,7 +1186,7 @@ function setup_grammar() {
 						parse: function(val1) {
 							var res1 = utils.clone(val1);
 							
-							res1.config = val1.config || {}; ////
+							res1.config = (val1.config) ? val1.config.config.value : {};
 							
 							res1.expression = parseParenthese(val1.expression);
 							res1.key = val1.key;
@@ -1153,7 +1196,7 @@ function setup_grammar() {
 						print: function(val1) {
 							var res1 = utils.clone(val1);
 							
-							res1.config = val1.config;
+							res1.config = (val1.config) ? {config: {type: "config",value: val1.config}} : null;
 							
 							res1.expression = printParenthese(val1.expression,"sequence",val1);
 							res1.key = val1.key;
@@ -1162,6 +1205,7 @@ function setup_grammar() {
 						},
 					},
 					"[": {
+						config: true,
 						structure: [
 							["p","expression"],
 							["p","key"]
@@ -1174,7 +1218,7 @@ function setup_grammar() {
 						parse: function(val1) {
 							var res1 = utils.clone(val1);
 							
-							res1.config = val1.config || {}; ////
+							res1.config = (val1.config) ? val1.config.config.value : {};
 							
 							res1.expression = parseParenthese(val1.expression);
 							res1.key = parseParenthese(val1.key.key);
@@ -1184,7 +1228,7 @@ function setup_grammar() {
 						print: function(val1) {
 							var res1 = utils.clone(val1);
 							
-							res1.config = val1.config;
+							res1.config = (val1.config) ? {config: {type: "config",value: val1.config}} : null;
 							
 							res1.expression = printParenthese(val1.expression,"sequence",val1);
 							res1.key = {key: printParenthese(val1.key,"restore")};
@@ -1193,12 +1237,13 @@ function setup_grammar() {
 						},
 					},
 					invocation: {
+						config: true,
 						structure: [
 							["p","expression"],
 							["[p","parameter"]
 						],
 						pattern: [
-							["p","expression","expression"],configToken()," ",["g","(","parameter",[
+							["p","expression","expression"],configToken(),["g","(","parameter",[
 								["*","parameter",[
 									configToken(),["p","expression","parameter"],["?","separator",[  // match last => unparsed
 										","," "
@@ -1209,7 +1254,7 @@ function setup_grammar() {
 						parse: function(val1) {
 							var res1 = utils.clone(val1);
 							
-							res1.config = val1.config || {}; ////
+							res1.config = (val1.config) ? val1.config.config.value : {};
 							
 							res1.parsed = (!val1.parameter.parameter.length
 								|| !val1.parameter.parameter[val1.parameter.parameter.length - 1].separator);
@@ -1220,7 +1265,7 @@ function setup_grammar() {
 							utils.forList(val1.parameter.parameter,function(val2) {
 								var res2 = parseParenthese(val2.parameter);
 								
-								res2.config = val2.config || {}; ////
+								res2.config = (val2.config) ? val2.config.config.value : {};
 								
 								res1.parameter.push(res2);
 							});
@@ -1230,7 +1275,7 @@ function setup_grammar() {
 						print: function(val1) {
 							var res1 = utils.clone(val1);
 							
-							res1.config = val1.config;
+							res1.config = (val1.config) ? {config: {type: "config",value: val1.config}} : null;
 							
 							res1.expression = printParenthese(val1.expression,"sequence",val1);
 							
@@ -1238,7 +1283,7 @@ function setup_grammar() {
 							utils.forList(val1.parameter,function(val2,i) {
 								var res2 = {};
 								
-								res2.config = val2.config;
+								res2.config = (val2.config) ? {config: {type: "config",value: val2.config}} : null;
 								
 								res2.parameter = printParenthese(val2,"restore");
 								res2.separator = (i < val1.parameter.length - 1);
@@ -1253,8 +1298,9 @@ function setup_grammar() {
 			},
 			{
 				production: {
-					map: {
+					map: { //// replaced with block ???
 						variant: true,
+						config: true,
 						structure: [
 							["[{","entry",[
 								["p","key"],
@@ -1272,14 +1318,14 @@ function setup_grammar() {
 										}],":"," ",["p","expression","entry"],["?","separator",[  // print all
 											",",["n"]
 										]]
-									]],["n"],
+									]],
 								["i",-1]
 							]]
 						],
 						parse: function(val1) {
 							var res1 = utils.clone(val1);
 							
-							res1.config = val1.config || {}; ////
+							res1.config = (val1.config) ? val1.config.config.value : {};
 							
 							res1.entry = [];
 							utils.forList(val1.entry.entry,function(val2) {
@@ -1296,7 +1342,7 @@ function setup_grammar() {
 						print: function(val1) {
 							var res1 = utils.clone(val1);
 							
-							res1.config = val1.config;
+							res1.config = (val1.config) ? {config: {type: "config",value: val1.config}} : null;
 							
 							res1.entry = {entry: []};
 							utils.forList(val1.entry,function(val2) {
@@ -1319,6 +1365,7 @@ function setup_grammar() {
 				production: {
 					list: {
 						variant: true,
+						config: true,
 						structure: [
 							["[p","entry"]
 						],
@@ -1336,7 +1383,7 @@ function setup_grammar() {
 						parse: function(val1) {
 							var res1 = utils.clone(val1);
 							
-							res1.config = val1.config || {}; ////
+							res1.config = (val1.config) ? val1.config.config.value : {};
 							
 							res1.parsed = (!val1.entry.entry.length
 								|| !val1.entry.entry[val1.entry.entry.length - 1].separator);
@@ -1351,7 +1398,7 @@ function setup_grammar() {
 						print: function(val1) {
 							var res1 = utils.clone(val1);
 							
-							res1.config = val1.config;
+							res1.config = (val1.config) ? {config: {type: "config",value: val1.config}} : null;
 							
 							res1.entry = {entry: []};
 							utils.forList(val1.entry,function(val2,i) {
@@ -1372,6 +1419,9 @@ function setup_grammar() {
 				production: {
 					parenthese: {
 						variant: true,
+						structure: [
+							["p","expression"]
+						],
 						pattern: [
 							["g","(","expression",[
 								["p","expression","expression"]
@@ -1397,6 +1447,7 @@ function setup_grammar() {
 			{
 				production: {
 					typeof: {
+						config: true,
 						structure: [
 							["p","expression"]
 						],
@@ -1408,7 +1459,7 @@ function setup_grammar() {
 						parse: function(val1) {
 							var res1 = utils.clone(val1);
 							
-							res1.config = val1.config || {}; ////
+							res1.config = (val1.config) ? val1.config.config.value : {};
 							
 							res1.expression = parseParenthese(val1.expression.expression);
 							
@@ -1417,7 +1468,7 @@ function setup_grammar() {
 						print: function(val1) {
 							var res1 = utils.clone(val1);
 							
-							res1.config = val1.config;
+							res1.config = (val1.config) ? {config: {type: "config",value: val1.config}} : null;
 							
 							res1.expression = {expression: printParenthese(val1.expression,"group")};
 							
@@ -1435,8 +1486,6 @@ function setup_grammar() {
 						],
 						parse: function(val1) {
 							var res1 = utils.clone(val1);
-							
-							res1.parsed = !grammar.reserved[val1.identifier.value];
 							
 							res1.identifier = val1.identifier;
 							
@@ -1480,7 +1529,13 @@ function setup_grammar() {
 						print: function(val1) {
 							var res1 = utils.clone(val1);
 							
-							res1.literal = {literal: val1.value || null};
+							res1.literal = {
+								literal: {
+									terminal: true,
+									type: val1.production,
+									value: val1.value || null,
+								},
+							};
 							res1.literal.production = val1.production;
 							
 							return res1;
@@ -1490,12 +1545,6 @@ function setup_grammar() {
 					},
 				},
 			}
-			
-			// config
-			//// contains id, formatting
-			//// JSON.parse()
-			//// hidden: true,
-			//// "@",["g","{",[]] ////
 		],
 		token: {
 			number: {
@@ -1534,7 +1583,7 @@ function setup_grammar() {
 						["|"],
 						["^"],
 						["&"],
-						["!=="],["!="],["==="],["=="],
+						["!="],["=="],
 						["<<"],[">>>"],[">>"],
 						["<="],["<"],[">="],[">"],
 						["*"],["/"],["%"],
@@ -1554,40 +1603,27 @@ function setup_grammar() {
 						[  // string in double quotes
 							"\"",["*",[
 								["|",[
-									[  // escaped all
+									[  // escaped character
 										"\\",
-										["c",[[0x0000,0xFFFF]]]
+										["c",[[0x0020,0x2027],[0x202A,0xFFFF]]]
 									],
-									[  // all except double quote and escape
-										["c",[[0x0000,0x0021],[0x0023,0x005B],[0x005C,0xFFFF]]]
+									[  // character except double quote and escape
+										["c",[[0x0020,0x0021],[0x0023,0x005B],[0x005D,0x2027],[0x202A,0xFFFF]]]
 									]
 								]]
 							]],"\""
 						],
-						/*[  // string in single quotes
-							"\'",["*",[
-								["|",[
-									[  // escaped all
-										"\\",
-										["c",[[0x0000,0xFFFF]]]
-									],
-									[  // all except single quote and escape
-										["c",[[0x0000,0x0026],[0x0028,0x005B],[0x005C,0xFFFF]]]
-									]
-								]]
-							]],"\'"
-						]*/
 					]]
 				],
 			},
 			identifier: {
 				pattern: [
-					// A..Z,"_",a..z,0x0080..0xFFFF (does not start with number)
-					["c",[[0x0041,0x005A],[0x005F,0x005F],[0x0061,0x007A],[0x0080,0xFFFF]]],
+					// A..Z,"_",a..z (does not start with number)
+					["c",[[0x0041,0x005A],[0x005F,0x005F],[0x0061,0x007A]]],
 					
-					// 0..9,A..Z,"_",a..z,0x0080..0xFFFF
+					// 0..9,A..Z,"_",a..z
 					["*",[
-						["c",[[0x0030,0x0039],[0x0041,0x005A],[0x005F,0x005F],[0x0061,0x007A],[0x0080,0xFFFF]]]
+						["c",[[0x0030,0x0039],[0x0041,0x005A],[0x005F,0x005F],[0x0061,0x007A]]]
 					]]
 				],
 			},
@@ -1601,13 +1637,13 @@ function setup_grammar() {
 		},
 		categorize: {
 			statement: {
-				block: true,
 				if: true,
 				switch: true,
 				while: true,
 				for: true,
 				"for in": true,
 				try: true,
+				block: true,
 				var: true,
 				continue: true,
 				break: true,
@@ -1635,9 +1671,7 @@ function setup_grammar() {
 				"^": true,
 				"&": true,
 				"==": true,
-				"===": true,
 				"!=": true,
-				"!==": true,
 				"<": true,
 				"<=": true,
 				">": true,
@@ -1719,15 +1753,15 @@ function setup_grammar() {
 			true: true,
 			false: true,
 			
+			
 			//// provide no apis (no math, number, string, array)
 			//// forbid prototype, window, implicit window
 			//// ? provide read only: length, NaN, Infinity, undefined
 			
-			//"Infinity",
-			//"length",
-			//"NaN",
-			prototype: true,
-			//"undefined"
+			
+			/* prototype: true, */
+			/* "__proto__": true, */
+			length: true,
 		},
 		short: {
 			package: "pk",

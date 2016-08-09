@@ -9,11 +9,11 @@
 			var property2 = true;
 			var property3 = false;
 			var property4 = "";
-			var property5 = '';
+			var property5 = "";
 			var property6 = "string1";
-			var property7 = 'string2';
+			var property7 = "string2";
 			var property8 = "\"";
-			var property9 = '\'';
+			var property9 = "\'";
 			var property10 = 0;
 			var property11 = 1;
 			var property12 = 1234567890;
@@ -29,11 +29,11 @@
 				true,
 				false,
 				"",
-				'',
+				"",
 				"string1",
-				'string2',
+				"string2",
 				"\"",
-				'\'',
+				"\'",
 				0,
 				1,
 				1234567890,
@@ -49,11 +49,11 @@
 					true,
 					false,
 					"",
-					'',
+					"",
 					"string1",
-					'string2',
+					"string2",
 					"\"",
-					'\'',
+					"\'",
 					0,
 					1,
 					1234567890,
@@ -62,7 +62,7 @@
 					1234567890.123456789,
 					0x0,
 					0x1,
-					0x1234567890ABCDEF,
+					0x1234567890ABCDEF
 				],
 				{},
 				{
@@ -70,11 +70,11 @@
 					property2: true,
 					property3: false,
 					property4: "",
-					property5: '',
+					property5: "",
 					property6: "string1",
-					property7: 'string2',
+					property7: "string2",
 					property8: "\"",
-					property9: '\'',
+					property9: "\'",
 					property10: 0,
 					property11: 1,
 					property12: 1234567890,
@@ -92,11 +92,11 @@
 				property2: true,
 				property3: false,
 				property4: "",
-				property5: '',
+				property5: "",
 				property6: "string1",
-				property7: 'string2',
+				property7: "string2",
 				property8: "\"",
-				property9: '\'',
+				property9: "\'",
 				property10: 0,
 				property11: 1,
 				property12: 1234567890,
@@ -112,11 +112,11 @@
 					true,
 					false,
 					"",
-					'',
+					"",
 					"string1",
-					'string2',
+					"string2",
 					"\"",
-					'\'',
+					"\'",
 					0,
 					1,
 					1234567890,
@@ -125,7 +125,7 @@
 					1234567890.123456789,
 					0x0,
 					0x1,
-					0x1234567890ABCDEF,
+					0x1234567890ABCDEF
 				],
 				property21: {},
 				property22: {
@@ -133,11 +133,11 @@
 					property2: true,
 					property3: false,
 					property4: "",
-					property5: '',
+					property5: "",
 					property6: "string1",
-					property7: 'string2',
+					property7: "string2",
 					property8: "\"",
-					property9: '\'',
+					property9: "\'",
 					property10: 0,
 					property11: 1,
 					property12: 1234567890,
@@ -159,12 +159,8 @@
 				3 & 6,
 				true == true,
 				true == false,
-				true === true,
-				true === false,
 				true != true,
 				true != false,
-				true !== true,
-				true !== false,
 				2 < 2,
 				2 < 3,
 				3 <= 2,
@@ -188,21 +184,25 @@
 				~0,
 				~1
 			];
-			function function1() {
+			function function1: () {
 			};
-			function function2(parameter1) {
+			function function2: (parameter1) {
 				for(;false;) {
-					if(false)
+					if(false) {
 						continue;
-					else if(false)
+					}
+					else if(false) {
 						break;
-					else if(false)
+					}
+					else if(false) {
 						return;
-					else if(false)
+					}
+					else if(false) {
 						throw;
+					}
 				}
 			};
-			function function3(parameter1,parameter2) {
+			function function3: (parameter1,parameter2) {
 				var a;
 				a = ((((3))));
 				var b = ((((5))));
@@ -241,7 +241,7 @@
 				}
 				if("string1") {
 				}
-				else if('string2') {
+				else if("string2") {
 				}
 				if(1) {
 				}
@@ -290,15 +290,15 @@
 					break;
 				case "":
 					break;
-				case '':
+				case "":
 					break;
 				case "string1":
 					break;
-				case 'string2':
+				case "string2":
 					break;
 				case "\"":
 					break;
-				case '\'':
+				case "\'":
 					break;
 				case 0:
 					break;
@@ -326,11 +326,11 @@
 				case true:
 				case false:
 				case "":
-				case '':
+				case "":
 				case "string1":
-				case 'string2':
+				case "string2":
 				case "\"":
-				case '\'':
+				case "\'":
 				case 0:
 				case 1:
 				case 1234567890:
@@ -416,11 +416,11 @@
 				true;
 				false;
 				"";
-				'';
+				"";
 				"string1";
-				'string2';
+				"string2";
 				"\"";
-				'\'';
+				"\'";
 				0;
 				1;
 				1234567890;
