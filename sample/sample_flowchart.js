@@ -33,17 +33,23 @@ project "&<u>\"\'\\" {
 					1;
 					2;
 				}
-				if(1) {
-					1;
-					2;
+				if(x==1) {
+					x=1;
+					varName1=2;
 				}
 				else if(2) {
 					1;
 					2;
 				}
-				else {
+				else if(x==3) {
 					1;
 					2;
+				}
+				else {
+					if(4) {
+					}
+					else if(5) {
+					}
 				}
 				switch(1) {
 				case 1:
@@ -83,7 +89,7 @@ project "&<u>\"\'\\" {
 					1;
 					2;
 				}
-				var x, y = 1;
+				var x, y = 1, t;
 				continue;
 				break;
 				return;
@@ -91,37 +97,11 @@ project "&<u>\"\'\\" {
 				t = ((1) ? 1 : 1);
 				t = (x = 1);
 				t = (x *= 1);
-				t = (x /= 1);
-				t = (x %= 1);
 				t = (x += 1);
-				t = (x -= 1);
-				t = (x <<= 1);
-				t = (x >>= 1);
-				t = (x >>>= 1);
-				t = (x &= 1);
-				t = (x ^= 1);
-				t = (x |= 1);
 				t = x || y;
 				t = x && y;
-				t = x | y;
-				t = x ^ y;
-				t = x & y;
-				t = x == y;
-				t = x != y;
-				t = x < y;
-				t = x <= y;
-				t = x > y;
-				t = x >= y;
-				t = x << y;
-				t = x >> y;
-				t = x >>> y;
 				t = x + y;
-				t = x - y;
 				t = x * y;
-				t = x / y;
-				t = x % y;
-				t = !x;
-				t = ~x;
 				x = y;
 				t = (x = y);
 				++x;
@@ -132,22 +112,11 @@ project "&<u>\"\'\\" {
 				t = (a = --x) / 3;
 				t = (a = x++) / 3;
 				t = (a = x--) / 3;
-				x.k;
 				t = x.k;
-				x[y];
 				x[y(1)];
 				function1(x + 1,y + 1);
 				t = function1(x + 1,y + 1);
-				(((1)));
-				t = (((1)));
-				x;
-				t = "&<u>\"\'\\";
-				t = 0x1;
-				t = 1;
-				t = 12.34;
-				t = null;
-				t = true;
-				t = false;
+				system.log("string" + (x + 1));
 			};
 			
 		}

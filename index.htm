@@ -12,11 +12,11 @@
 		<script type="text/javascript" src="code/analyze.js"></script>
 		<script type="text/javascript" src="code/worker.js"></script>
 	</head>
-	<body id="body" style="height:100%;margin:0px;font-family:sans-serif;font-size:small;white-space:nowrap;cursor:default;-webkit-touch-callout:none;-webkit-user-select:none;-moz-user-select:none;-ms-user-select:none;user-select:none;" unselectable="on" spellcheck="false" onload="window.main = (setup_main)(); main.load();" onresize="main.shouldResize = true; main.requestUpdate();">
-		<div style="height:100%;background-color:#ddd;">
+	<body id="body" style="height:100%;margin:0px;font-family:sans-serif;font-size:13px;white-space:nowrap;cursor:default;-webkit-touch-callout:none;-webkit-user-select:none;-moz-user-select:none;-ms-user-select:none;user-select:none;" unselectable="on" spellcheck="false" onload="window.main = (setup_main)(); main.load();" onresize="main.shouldResize = true; main.requestUpdate();" onunload="main.update3_store();">
+		<div style="height:100%;overflow:hidden;overflow-x:auto;background-color:#ddd;">
 			<table cellspacing="0" cellpadding="0" border="0" style="width:100%;height:100%;">
 				<tr>
-					<td style="vertical-align:top;">
+					<td style="height:0px;">
 						<table cellspacing="0" cellpadding="0" border="0" style="width:100%;">
 							<tr>
 								<td>
@@ -29,8 +29,8 @@
 													</tr>
 												</table>
 											</td>
-											<td>
-												&ensp;<span id="browser" style="font-size:smaller;"></span>&ensp;
+											<td style="width:0px;">
+												&ensp;<span id="browser" style="font-size:10px;"></span>&ensp;
 											</td>
 										</tr>
 									</table>
@@ -50,7 +50,7 @@
 													</tr>
 												</table>
 											</td>
-											<td id="updating"></td>
+											<td id="updating" style="width:0px;"></td>
 										</tr>
 									</table>
 								</td>
@@ -59,31 +59,33 @@
 					</td>
 				</tr>
 				<tr>
-					<td style="height:100%;vertical-align:top;">
-						<div id="content" style="height:100%;">
+					<td style="width:100%;height:100%;">
+						<div id="content" style="height:100%;visibility:hidden;">
 							<table cellspacing="0" cellpadding="0" border="0" style="width:100%;height:100%;">
 								<tr>
 									<td style="width:5px;min-width:5px;"></td>
-									<td style="outline:1px solid #666;background-color:#fff;">
+									<td style="width:0px;height:0px;outline:1px solid #666;background-color:#fff;vertical-align:top;">
 										<div id="left" style="height:100%;overflow:auto;"></div>
 									</td>
 									<td style="width:5px;min-width:5px;cursor:ew-resize;" onmousedown="main.isResizing = 'left';"></td>
-									<td id="right">
-										<table cellspacing="0" cellpadding="0" border="0" style="width:100%;height:100%;">
-											<tr>
-												<td style="outline:1px solid #666;background-color:#fff;">
-													<div id="edit" style="height:100%;overflow:scroll;overflow-x:auto;"></div>
-												</td>
-											</tr>
-											<tr>
-												<td style="height:5px;min-height:5px;cursor:ns-resize;" onmousedown="main.isResizing = 'output';"></td>
-											</tr>
-											<tr>
-												<td style="outline:1px solid #666;background-color:#fff;">
-													<div id="output" style="height:100%;overflow:scroll;overflow-x:auto;"></div>
-												</td>
-											</tr>
-										</table>
+									<td style="width:0px;height:0px;vertical-align:top;">
+										<div id="right" style="height:100%;">
+											<table cellspacing="0" cellpadding="0" border="0" style="width:100%;height:100%;">
+												<tr>
+													<td style="width:0px;height:0px;outline:1px solid #666;background-color:#fff;vertical-align:top;">
+														<div id="edit" style="height:100%;overflow:scroll;overflow-x:auto;"></div>
+													</td>
+												</tr>
+												<tr>
+													<td style="height:5px;min-height:5px;cursor:ns-resize;" onmousedown="main.isResizing = 'output';"></td>
+												</tr>
+												<tr>
+													<td style="width:0px;height:0px;outline:1px solid #666;background-color:#fff;vertical-align:top;">
+														<div id="output" style="height:100%;overflow:scroll;overflow-x:auto;"></div>
+													</td>
+												</tr>
+											</table>
+										</div>
 									</td>
 									<td style="width:5px;min-width:5px;"></td>
 								</tr>
@@ -92,7 +94,10 @@
 					</td>
 				</tr>
 				<tr>
-					<td style="height:15px;"></td>
+					<td style="height:15px;min-height:15px;"></td>
+				</tr>
+				<tr>
+					<td style="height:100%;"></td>
 				</tr>
 			</table>
 		</div>

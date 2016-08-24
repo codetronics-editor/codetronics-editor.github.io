@@ -69,9 +69,23 @@ function setup_utils() {
 			str = str.replace(/\\/g,"&#92;");
 			return str;
 		},
+		fromCharCodeArray: function(arr) {
+			var str = [];
+			utils.forList(arr,function(val) {
+				str.push(String.fromCharCode(val));
+			});
+			return str.join("");
+		},
+		toCharCodeArray: function(str) {
+			var arr = [];
+			for(var i = 0; i < str.length; ++i) {
+				arr.push(str.charCodeAt(i));
+			}
+			return arr;
+		},
 		makeIdentifier: function(str) {
-			str = str.replace(/^[^\u0041-\u005A\u005F-\u005F\u0061-\u007A\u0080-\uFFFF]*/,"");
-			str = str.replace(/^\u0030-\u0039\u0041-\u005A\u005F-\u005F\u0061-\u007A\u0080-\uFFFF]/g,"");
+			str = str.replace(/^[^\u0041-\u005A\u005F-\u005F\u0061-\u007A]*/,"");
+			str = str.replace(/[^\u0030-\u0039\u0041-\u005A\u005F-\u005F\u0061-\u007A]/g,"");
 			return str;
 		},
 		
@@ -87,15 +101,31 @@ function setup_utils() {
 			queue.queue.splice(queue.insert,0,[func,ctx2]);
 			++queue.insert;
 		},
+		t3: 0,
 		runInterruptable: function(queue) {
 			setTimeout(function() {
+				//var t1 = new Date().getTime() * 0.001;
+				
 				if(queue.queue && queue.queue.length && queue.cond(queue.ctx1)) {
 					queue.insert = 0;
 					var task = queue.queue.shift();
-					(task[0])(queue,task[1]);
+					try {
+						(task[0])(queue,task[1]);
+					}
+					catch(ex) {
+						console.error(ex);
+						throw ex;////
+					}
 					if(queue.queue.length)
 						utils.runInterruptable(queue);
 				}
+				
+				/*var t2 = new Date().getTime() * 0.001;
+				if(utils.t3) {
+					console.log("PROF overhead time ",t1 - utils.t3);
+				}
+				console.log("PROF  payload time ",t2 - t1,(task) ? task[0] : null);
+				utils.t3 = t2;*/
 			},0);
 		},
 	};

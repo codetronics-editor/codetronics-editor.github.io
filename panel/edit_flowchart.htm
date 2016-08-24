@@ -3,75 +3,14 @@
 	<head>
 		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 	</head>
-	<body id="panel" onload="start();">
-		<svg width="1000" height="1000" viewBox="0 0 1000 1000" style="margin:0.5em;font-family:monospace;-moz-tab-size:4;tab-size:4;">
-			<g fill="#fff" stroke="#000" stroke-width="1">
-				<path id="p" />
-			</g>
-			
-			<foreignObject x="0" y="0" width="1000" height="1000">
-				<body>
-					<table cellspacing="0" cellpadding="0" border="0">
-						<tr>
-							<td>
-								<table cellspacing="0" cellpadding="0" border="0">
-									<tr>
-										<td><div id="x" style="padding:0.5em;background-color:#fff;">ControlFlow.C.main()</div></td>
-									</tr>
-								</table>
-							</td>
-						</tr>
-						<tr>
-							<td style="height:100px;"></td>
-						</tr>
-						<tr>
-							<td>
-								<table cellspacing="0" cellpadding="0" border="0">
-									<tr>
-										<td><div style="padding:0.5em;white-space:pre;border:1px solid #000;background-color:#fff;">for(var i = 0; i < y; i++)</div></td>
-									</tr>
-								</table>
-							</td>
-						</tr>
-						<tr>
-							<td style="height:100px;"></td>
-						</tr>
-						<tr>
-							<td>
-								<table cellspacing="0" cellpadding="0" border="0">
-									<tr>
-										<td><div style="padding:0.5em;border:1px solid #000;">Main.main() #2</div></td>
-									</tr>
-								</table>
-							</td>
-						</tr>
-						<tr>
-							<td>
-								<table cellspacing="0" cellpadding="0" border="0">
-									<tr>
-										<td><div style="padding:0.5em;border:1px solid #000;">halt</div></td>
-									</tr>
-								</table>
-							</td>
-						</tr>
-					</table>
-				</body>
-			</foreignObject>
-		</svg>
-		<script type="text/javascript">
-			function start() {
-				var x = document.getElementById("x");
-				var y = document.getElementById("y");
-				var r = x.getBoundingClientRect();
-				x.style.marginLeft = x.style.marginRight = r.height + "px";
-				x.style.marginTop = x.style.marginBottom = (r.width / 4) + "px";
-				
-				var m = [r.left + r.width / 2 + r.height,r.top + r.height / 2 + r.width / 4];
-				var d = ["M",r.left,m[1],"L",m[0],r.top,"L",r.left + r.width + r.height * 2,m[1],"L",m[0],r.top + r.height + r.width / 2,"Z"];
-				
-				document.getElementById("p").setAttribute("d", d.join(" "));
-				//alert(d.join(" "));
-			}
-		</script>
+	<body id="panel">
+		<div style="min-height:100%;font-size:10px;background-color:#f1f1f1;">
+			<svg width="1" height="1" viewBox="0 0 1 1" style="">
+				<g fill="none" stroke="#000" stroke-width="0.2"></g>
+				<g fill="none" stroke="#000" stroke-width="0.8"></g>
+				<g fill="#fff" stroke="#000" stroke-width="0.8"></g>
+				<foreignObject x="0" y="0" width="1" height="1" style="white-space:nowrap;text-align:center;"></foreignObject>
+			</svg>
+		</div>
 	</body>
 </html>
